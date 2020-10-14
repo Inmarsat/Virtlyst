@@ -19,9 +19,10 @@
 
 #include "storagepool.h"
 #include "virtlyst.h"
-
 #include <QXmlStreamWriter>
 #include <QLoggingCategory>
+
+// #include <magic.h>
 
 StorageVol::StorageVol(virStorageVolPtr vol, virStoragePoolPtr pool, QObject *parent) : QObject(parent)
   , m_vol(vol)
@@ -47,13 +48,31 @@ QString StorageVol::type()
     return ret;
 }
 
-QString StorageVol::size()
+
+QString StorageVol::r_size()
 {
-    if (getInfo()) {
-        return Virtlyst::prettyKibiBytes(m_info.capacity / 1024);
-    }
+      if (getInfo()) 
+        return QString::number(m_info.capacity);
+	;
     return QString();
 }
+
+bool StorageVol::expandStorageVolume(const qint64 &increase_by)
+{
+   qint64 sizeByte = increase_by * 1073741824;
+   if( virStorageVolResize(m_vol,sizeByte,VIR_STORAGE_VOL_RESIZE_DELTA) == 0)
+      return true;
+   else
+      return false;
+}
+
+QString StorageVol::size()
+{
+    if (getInfo())
+        return Virtlyst::prettyKibiBytes(m_info.capacity / 1024);
+    return QString();
+}
+
 
 QString StorageVol::usedby()
 {
@@ -123,16 +142,60 @@ StorageVol *StorageVol::clone(const QString &name, const QString &format, int fl
     stream.writeStartElement(QStringLiteral("format"));
     stream.writeAttribute(QStringLiteral("type"), localFormat);
     stream.writeEndElement(); // format
+    stream.writeStartElement(QStringLiteral("permissions"));
+    stream.writeTextElement(QStringLiteral("mode"), QString::number(644));
+    stream.writeTextElement(QStringLiteral("owner"), QString::number(1000));
+    stream.writeTextElement(QStringLiteral("group"), QString::number(36));
+    stream.writeEndElement(); // permissions
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // volume
-    qDebug() << "XML output" << output;
+    // qDebug() << "XML output" << output;
 
     virStorageVolPtr vol = virStorageVolCreateXMLFrom(poolPtr(), output.constData(), m_vol, flags);
     if (vol) {
         return new StorageVol(vol, m_pool, this);
     }
     return nullptr;
+}
+
+
+void StorageVol::upload(Cutelyst::Upload* upload)
+{
+  qDebug() << "uploading: " << upload->filename();
+  qDebug() << "name: " << upload->name();
+  qDebug() << "size: " << upload->size();
+  qDebug() << "pos: " << upload->pos();
+  qDebug() << "content-type: " << upload->contentType();
+
+  m_conn = virStorageVolGetConnect(m_vol);
+  virStreamPtr stream = virStreamNew(m_conn, 0);
+  int status = virStorageVolUpload(m_vol, stream, 0, upload->size(), 0);
+  qDebug() << "virStorageVolUpload status: " << status;
+
+  char data[0x100000]; // 1MB buffer on the stack
+  while (!upload->atEnd()) {
+    int bytes = upload->read(data, sizeof(data));
+//    qDebug() << upload->filename() << ": read " << bytes << " bytes";
+    int written = 0;
+    while (written < bytes) {
+      int count = virStreamSend(stream, data, bytes);
+      if (count < 0) {
+        qDebug() << "Failed to write bytes to stream";
+        virStreamAbort(stream);
+        goto done;
+      }
+      // qDebug() << upload->filename() << ": wrote " << bytes << " bytes";
+      written += count;
+    }
+  }
+  qDebug() << "File uploading" << upload->filename() << "done";
+  if (virStreamFinish(stream) < 0) {
+    qDebug() << "Failed to finish writing virt stream";
+  }
+ done:
+  virStreamFree(stream);
+
 }
 
 StoragePool *StorageVol::pool()
@@ -153,7 +216,7 @@ QDomDocument StorageVol::xmlDoc()
     if (m_xml.isNull()) {
         char *xml = virStorageVolGetXMLDesc(m_vol, 0);
         const QString xmlString = QString::fromUtf8(xml);
-        qDebug() << "XML" << xml;
+        // qDebug() << "XML" << xml;
         QString error;
         if (!m_xml.setContent(xmlString, &error)) {
             qWarning() << "Failed to parse XML from interface" << error;

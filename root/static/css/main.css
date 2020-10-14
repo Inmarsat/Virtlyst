@@ -21,7 +21,7 @@ label input[type="radio"], label input[type="checkbox"] {
 
 .navbar-inverse {
     text-shadow: 0 -1px 0 rgba(0, 0, 0, .15);
-    background-color: #369bab;
+    background-color: #003b65;
     border-color: #2f6c6f;
     box-shadow: 0 1px 0 rgba(255, 255, 255, .1);
 }
@@ -213,3 +213,17 @@ p {
 #viewXMLpre .pre-scrollable {
     width: 100%;
 }
+.form-signin {
+    max-width: 330px;
+    padding: 15px;
+    margin: 0 auto;
+}
+.form-model-footer {
+    padding: 15px;
+    text-align: right;
+}
+/*.form-signin input[type="text"] {
+    margin-bottom: -1px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}*/

@@ -16,8 +16,8 @@
  */
 #ifndef INFO_H
 #define INFO_H
-
 #include <Cutelyst/Controller>
+#include "lib/connection.h"
 
 using namespace Cutelyst;
 
@@ -28,21 +28,24 @@ class Info : public Controller
 public:
     explicit Info(Virtlyst *parent = nullptr);
 
-    C_ATTR(hostusage, :Local :AutoArgs)
-    void hostusage(Context *c, const QString &hostId);
 
-    C_ATTR(insts_status, :Local :AutoArgs)
-    void insts_status(Context *c, const QString &hostId);
-
-    C_ATTR(inst_status, :Local :AutoArgs)
-    void inst_status(Context *c, const QString &hostId, const QString &name);
+    C_ATTR(insts_status_api, :Local :AutoArgs)
+    void insts_status_api(Context *c, const QString &hostId);
+    
+    QJsonArray insts_status(Context *c,const QString &hostId,Connection *conn,const QString& inst);
 
     C_ATTR(instusage, :Local :AutoArgs)
     void instusage(Context *c, const QString &hostId, const QString &name);
 
+    C_ATTR(events, :Local :AutoArgs)
+    void events(Context *c,const QString &hostId); 
+
+
+    C_ATTR(inst_status, :Local :AutoArgs)
+    void inst_status(Context *c, const QString &hostId, const QString &name);
+
 private Q_SLOTS:
     void End(Context *c) { Q_UNUSED(c); }
-
 private:
     Virtlyst *m_virtlyst;
 };

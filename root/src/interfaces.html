@@ -2,7 +2,7 @@
 {% block title %}{% i18n "Interface" %}{% endblock %}
 {% block content %}
     {% include 'sidebar.html' %}
-    <div class="main col-xs-12 col-sm-9">
+    <div class="col-md-9 col-md-offset-2 content">
         {% if errors %}
             {% for error in errors %}
                 <div class="alert alert-danger">
@@ -44,7 +44,7 @@
                     <h4 class="modal-title">{% i18n "Create New Interface" %}</h4>
                 </div>
                 <div class="tab-content">
-                    <form class="form-horizontal" method="post" action="" role="form">{{ csrf_token }}
+                    <form class="form-horizontal" method="post" action="" role="form">{% c_csrf_token %}
                         <div class="form-group">
                             <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 

@@ -38,6 +38,23 @@ public:
 
     C_ATTR(change_password, :Local :AutoArgs)
     void change_password(Context *c, const QString &id);
+
+    C_ATTR(delete_user, :Local :AutoArgs)
+    void delete_user(Context *c, const QString &id);
+
+    C_ATTR(find, :Local :AutoArgs)
+    bool find(const QString &username, const QString &id);
+
+    C_ATTR(getUserById, :Local :AutoArgs)
+    void getUserById(Context *c, const QString &id);
+
+ private:
+
+    bool validateUsername(Context *c, const QString &username);
+
+    bool validatePassword(Context *c, const QString &password, const QString &confirm);
 };
 
+
 #endif // USERS_H
+

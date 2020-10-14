@@ -1,38 +1,211 @@
 <!--{ load tags_active %}-->
+<body onload="display_current_time()">
 <div class="row">
-    <div class="col-xs-12">
-        <div class="page-header">
-            <a href="/create/{{ host_id }}" class="btn btn-sm btn-success pull-right">{% i18n "New Instance" %}</a>
-            <h1><a href="/overview/{{ host_id }}">{{ host.name }}</a></h1>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="sidebar col-xs-12 col-sm-3">
+    <div class="col-md-2 sidebar">
         <ul>
-            <li>
-                <a href="/instances/{{ host_id }}"
-                   class="list{% if c.namespace == 'instances' %} selected{% endif %}">{% i18n "Instances" %}</a>
+
+<i style="color:#003967" class="sidebaritem fas fa-ship"></i>
+       <span style="color:#003967"> {{ vesselname }} </span>
+<i id="sse_usage" style="color:green" class="fas fa-satellite-dish sidebaritem"></i><br>       
+<i style="color:#003967" class="sidebaritem fas fa-user"></i>
+       <span style="color:#003967"> {{ user }} </span><br>
+       <hr>
+            <li {% if c.namespace == 'instances' %} style="background:#003967" {% endif %}">
+                <a {% if c.namespace == 'instances' %} class="sidebaritemasel" {% else %} class="sidebaritema"  {% endif %}" href="/instances/{{ host_id }}">
+                   <i class="sidebaritem fa fa-cubes">
+		   </i>
+		   <span id="sidebar_instances"> {% i18n  "Instances" %} </span>
+		</a>
             </li>
-            <li>
-                <a href="/storages/{{ host_id }}"
-                   class="list{% if c.namespace == 'storages' %} selected{% endif %}">{% i18n "Storages" %}</a>
+            <li {% if c.namespace == 'storages' %} style="background:#003967" {% endif %}">
+                <a {% if c.namespace == 'storages' %} class="sidebaritemasel" {% else %} class="sidebaritema"  {% endif %}" href="/storages/{{ host_id }}">
+                   <i class="sidebaritem fa fa-hdd">
+		   </i>
+		   <span id="sidebar_storages" > {% i18n  "Storage" %} </span>
+		</a>
             </li>
-            <li>
-                <a href="/networks/{{ host_id }}"
-                   class="list{% if c.namespace == 'networks' %} selected{% endif %}">{% i18n "Networks" %}</a>
+            <li {% if c.namespace == 'networks' %} style="background:#003967" {% endif %}">
+                <a  {% if c.namespace == 'networks' %} class="sidebaritemasel" {% else %} class="sidebaritema"  {% endif %}" href="/networks/{{ host_id }}">
+                   <i class="sidebaritem fa fa-network-wired">
+		   </i>
+		   <span id="sidebar_networks"> {% i18n  "Networks" %} </span>
+		</a>
             </li>
-            <li>
-                <a href="/interfaces/{{ host_id }}"
-                   class="list{% if c.namespace == 'interfaces' %} selected{% endif %}">{% i18n "Interfaces" %}</a>
+            <li {% if c.namespace == 'overview' %} style="background:#003967" {% endif %}">
+                <a {% if c.namespace == 'overview' %} class="sidebaritemasel" {% else %} class="sidebaritema"  {% endif %}" href="/overview/{{ host_id }}">
+                   <i class="sidebaritem fa fa-chart-area">
+		   </i>
+		   <span id="sidebar_overview" > {% i18n  "Overview" %} </span>
+		</a>
             </li>
-            <li>
-                <a href="/secrets/{{ host_id }}"
-                   class="list{% if c.namespace == 'secrets' %} selected{% endif %}">{% i18n "Secrets" %}</a>
-            </li>
-            <li>
-                <a href="/overview/{{ host_id }}"
-                   class="list{% if c.namespace == 'overview' %} selected{% endif %}">{% i18n "Overview" %}</a>
-            </li>
+	    <hr>
+       <li class="sidebaritem">
+       <!-- span> {% i18n  "CPU" %} </span -->
+       <div class="progress">
+                  <div id="prog_cpu" class="progress-bar  progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+       </div>
+       </li>
+       <li class="sidebaritem">
+       <!-- span> {% i18n  "Memory" %} </span -->
+       <div class="progress">
+                  <div id="prog_mem" class="progress-bar progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+       </div>	  
+       </li>
+       <hr>
+       <i class="fa fa-clock current_time sidebaritem"></i>
+       <time style="color:#003967;" id=current_time></time>
         </ul>
     </div>
+<!-- script src="/static/js/ReconnectingEventSource.min.js"></script -->
+<script type="text/javascript">
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawChart);
+   
+window.addEventListener("load", function(){
+host_lastCpusUsage=JSON.parse(localStorage.getItem('host_lastCpusUsage'));
+host_lastMemUsage=JSON.parse(localStorage.getItem('host_lastMemUsage'));
+
+
+$("#prog_cpu").css("width", host_lastCpusUsage + "%")
+ 	                     .attr("aria-valuenow", host_lastCpusUsage)
+ 			     .text("CPU:" + host_lastCpusUsage + "%");
+
+$("#prog_mem").css("width", host_lastMemUsage + "%")
+ 	                     .attr("aria-valuenow", host_lastMemUsage)
+ 			     .text("RAM:" + host_lastMemUsage + "%");
+});
+
+var data_cpu,data_mem,line_options,chart_cpu,chart_mem;
+
+function drawChart(){
+
+  line_options = {
+                                  curveType: 'function',
+                                  legend: 'none',
+                                  vAxis: {
+                                        viewWindow: {
+                                           min: 0,
+                                           max: 100
+                                          }
+                                  },
+                                  hAxis: { 
+                                    format:'HH:mm:ss',
+                                    gridlines: {count: 7}
+                                    }
+                                };
+        var host_lastCpusUsage=JSON.parse(localStorage.getItem('host_lastCpusUsage'));
+        var host_lastMemUsage=JSON.parse(localStorage.getItem('host_lastMemUsage'));
+        $("#prog_cpu").css("width", host_lastCpusUsage + "%")
+                                             .attr("aria-valuenow", host_lastCpusUsage)
+                                             .text("CPU:" + host_lastCpusUsage + "%");
+
+        $("#prog_mem").css("width", host_lastMemUsage + "%")
+                                             .attr("aria-valuenow", host_lastMemUsage)
+                                             .text("RAM:" + host_lastMemUsage + "%");
+
+        if (document.getElementById('chart_cpu') != null) {
+                  data_cpu = new google.visualization.DataTable();
+                  data_cpu.addColumn('date', 'Time');
+                  data_cpu.addColumn('number', 'CPU %');
+		  var prev=JSON.parse(localStorage.getItem('allSystemUsage'));
+		  if ((prev != null) && Array.isArray(prev)) { 
+		      var arrayLength = prev.length;
+		      for (var i = 0; i < arrayLength; i++) {
+                           data_cpu.addRow([new Date(prev[i]["date"]),parseFloat(prev[i]["cpu"])]);
+                      }
+		   }   
+                   chart_cpu = new google.visualization.LineChart(document.getElementById('chart_cpu'));
+                   chart_cpu.draw(data_cpu, line_options);
+            }
+        if (document.getElementById('chart_mem') != null) {
+                  data_mem = new google.visualization.DataTable();
+                  data_mem.addColumn('date', 'Time');
+                  data_mem.addColumn('number', 'Memory %');
+		  var prev=JSON.parse(localStorage.getItem('allSystemUsage'));
+	          if ((prev != null) && Array.isArray(prev)) {
+		     var arrayLength = prev.length;
+		     for (var i = 0; i < arrayLength; i++) {
+                             data_mem.addRow([new Date(prev[i]["date"]),parseFloat(prev[i]["memory"])]);
+                     }
+                  } 
+                  chart_mem = new google.visualization.LineChart(document.getElementById('chart_mem'));
+                  chart_mem.draw(data_mem, line_options);
+            }
+
+};
+function display_current(){
+var refresh=10000; 
+setTimeout('display_current_time()',refresh)
+}
+
+function display_current_time() {
+var today = new Date();
+var opt = { weekday: 'short', year: 'numeric',
+                month: 'short', day: 'numeric' ,
+	       hourCycle: "h23",
+               hour:  "2-digit",
+               minute: "2-digit"
+		};
+var date = today.toLocaleDateString('en-Us', opt);
+document.getElementById('current_time').innerHTML = " "+date ;
+display_current();
+ }
+
+
+event_source = new EventSource('/info/events/{{ host_id }}');
+var div = document.getElementById('sse_usage');
+
+event_source.addEventListener("system_usage", function(event) {
+                 var data=JSON.parse(event.data);
+                 var cpu=data.cpu;
+                 var memory=data.memory;
+                 var date=data.date;
+                 var prev=[];
+    	     
+    	     localStorage.setItem("host_lastCpusUsage", cpu);
+    	     localStorage.setItem("host_lastMemUsage", memory);
+    	     var prev=JSON.parse(localStorage.getItem('allSystemUsage'));
+    	     if ((prev != null) && Array.isArray(prev)) {
+    	            prev.push(data);
+    	            localStorage.setItem("allSystemUsage", JSON.stringify(prev));
+                 }
+    	     else
+    	            localStorage.setItem("allSystemUsage", JSON.stringify(data));
+
+                 $("#prog_cpu").css("width", cpu + "%")
+                                         .attr("aria-valuenow", cpu)
+                                         .text("CPU:" + cpu + "%");
+
+                 $("#prog_mem").css("width", memory + "%")
+                                         .attr("aria-valuenow", memory)
+                                         .text("RAM:" + memory + "%");
+
+                 if (document.getElementById('chart_cpu') != null) {
+                      data_cpu.addRow([new Date(),parseFloat(cpu)]);
+                      chart_cpu.draw(data_cpu, line_options);
+                 }
+                 if (document.getElementById('chart_mem') != null) {
+                      data_mem.addRow([new Date(),parseFloat(memory)]);
+                      chart_mem.draw(data_mem, line_options);
+                 }
+ });
+
+event_source.onerror = function (event) {
+ div.style.color = "red";
+}
+
+
+
+event_source.onopen = function (event) {
+div.style.color = "green";
+};
+
+
+window.addEventListener("beforeunload", function (e) {
+  event_source.close();
+});
+
+
+
+
+</script>

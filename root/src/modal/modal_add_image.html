@@ -1,0 +1,68 @@
+<!-- Modal Image -->
+<div class="modal fade" id="AddImage" tabindex="-1" role="dialog" aria-labelledby="AddImageLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-toggle="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">{% i18n "Add New Image" %}</h4>
+            </div>
+            <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
+                <div class="form-group" id="storage_pool_image">
+                    <label class="col-sm-3 control-label">{% i18n "Storage Pool" %}</label>
+                    <div class="col-sm-8">
+                        <select id="pool-control" name="storage_pool">
+		          {% for pool in storages %}
+			 <optgroup class='def-cursor' label='Name' data-size='Size' data-free='Free'>
+                            <option data-size="{{ pool.size }} GB" data-free="{{ pool.sfree}} GB" data-path={{ pool.path }} value={{ pool.name }}>{{ pool.name }}</option>
+		       </optgroup>  
+		     {% endfor %}	
+                        </select>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" id=image_name name="name" placeholder="{% i18n "Name" %}"
+                               required pattern="[a-zA-Z0-9\.\-_]+">
+                    </div>
+                </div>
+                <div class="form-group" id="image_format">
+                    <label class="col-sm-3 control-label">{% i18n "Format" %}</label>
+                    <div class="col-sm-6">
+                        <select name="format" class='form-control'>
+                            <option value="qcow2">{% i18n "qcow2" %}</option>
+                            <option value="raw">{% i18n "raw" %}</option>
+                        </select>
+                    </div>
+			 <i class="icon fas fa-info-circle"  rel="popover" title="Image Format" data-content="qcow2 (smaller images) raw (faster performance)"></i>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">{% i18n "Size" %}</label>
+
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" id=image_size name="size" value="10" maxlength="3" required
+                               pattern="[0-9]+">
+                    </div>
+                    <label class="col-sm-1 control-label">{% i18n "GB" %}</label>
+                </div>
+                <div class="form-group meta-prealloc">
+                    <label class="col-sm-4 control-label">{% i18n "Preallocate Metadata" %}</label>
+                    <div class="col-sm-5">
+                        <input id="meta_prealloc" type="checkbox" data-size="mini"  data-toggle="switch" name="meta_prealloc" value="true" checked>
+		    <i class="icon fas fa-info-circle"  rel="popover" title="Data allocation" data-content="Can be used to get higher performance with qcow2 image files"></i>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{% i18n "Close" %}</button>
+		    <button class="btn btn-primary" {% if c.namespace == 'storages' %} type="submit" {% endif %} {% if c.namespace == 'instances' %} type="button" data-dismiss="modal" id="newImageSave" data-toggle="modal" {% endif %} name="add_volume">{% i18n "Create Image" %}</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div><!-- /.modal -->
+

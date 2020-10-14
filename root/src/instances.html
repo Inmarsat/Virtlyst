@@ -5,32 +5,119 @@
 {% endblock %}
 {% block content %}
     {% include 'sidebar.html' %}
-    <div class="main col-xs-12 col-sm-9" role="main">
-        {% if errors %}
+    <div class="col-md-10 col-md-offset-2 content" role="main">
             {% for error in errors %}
-                <div class="alert alert-danger">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    {{ error }}
-                </div>
+                <script type="text/javascript">
+		function ShowAlert() {
+                     var title = 'FleetCompute Errors';
+
+                    return eModal
+                              .alert('{{ error }}' , title);
+                     };
+		 </script>
             {% endfor %}
-        {% endif %}
+       <br>
+       <a data-toggle="modal" href="#addCustom" class="btn btn-sm btn-success pull-left">{% i18n "New Instance" %}</a><br>
+         <div class="clearfix"></div>
         {% if instances.size %}
             <div class="table-responsive">
                 <table class="table" id="sortTable">
                     <thead>
                     <tr class="active">
                         <th>{% i18n "Name" %}</th>
-                        <th>{% i18n "Status" %}</th>
-                        <th>{% i18n "VCPUs" %}</th>
-                        <th>{% i18n "Memory" %}</th>
                         <th style="width:252px;">{% i18n "Action" %}</th>
+                        <th>{% i18n "Status" %}</th>
+                        <th style="text-align:right">{% i18n "VCPUs" %}</th>
+                        <th style="text-align:right">{% i18n "Memory" %}</th>
+                        <th>{% i18n "AutoStart" %}</th>
+                        <th>{% i18n "Description" %}</th>
+                        <th>{% i18n "Created" %}</th>
+                        <th>{% i18n "Last Modified" %}</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for inst in instances|dictsort:"name.lower"|dictsort:"status" %}
                         <tr id="{{ inst.name }}">
-                            <td><a href="/instances/{{ host_id }}/{{ inst.name }}"><i
+                            <td><a id=instance_{{ inst.name }} href="/instances/{{ host_id }}/{{ inst.name }}"><i
                                     class="icon-th-large"></i> {{ inst.name }}</a></td>
+                            <td>
+                                <form action="" method="post" role="form">{% c_csrf_token %}
+                                    <input type="hidden" name="name" value="{{ inst.name }}"/>
+                                    {% if inst.status == 5 %}
+                                        <button id="{{ inst.name }}_start" id='{{ inst.name }}"_start' class="btn btn-sm btn-default" type="submit" name="start" title="Start">
+                                            <span class="fa fa-play"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_suspend" class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
+                                            <span class="fa fa-pause"></span>
+                                        </button>
+					<button id="{{ inst.name }}_shutdown" class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
+                                                <span class="fa fa-power-off"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_destroy" class="btn btn-sm btn-default disabled"
+                                                title="{% i18n "Force Shutdown" %}">
+                                            <span class="fa fa-stop"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_reset" class="btn btn-sm btn-default disabled"
+                                                title="{% i18n "Reset" %}">
+                                            <span class="fa fa-undo"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_console" class="btn btn-sm btn-default enabled" title="{% i18n "Console" %}">
+                                            <span class="fa fa-film"></span>
+                                        </button>
+                                    {% endif %}
+                                    {% if inst.status == 3 %}
+                                        <button id="{{ inst.name }}_resume" class="btn btn-sm btn-default" type="submit" name="resume"
+                                                title="{% i18n "Resume" %}">
+                                            <span class="fas fa-forward"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_suspend" class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
+                                            <span class="fa fa-pause"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_shutdown" class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
+                                            <span class="fa fa-power-off"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_destroy" class="btn btn-sm btn-default enabled" type="submit" name="destroy"
+                                                title="{% i18n "Force Shutdown" %}">
+                                            <span class="fa fa-stop"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_reset" class="btn btn-sm btn-default enabled" type="submit" name="reset"
+                                                title="{% i18n "Reset" %}">
+                                            <span class="fa fa-undo"></span>
+                                        <button id="{{ inst.name }}_console" class="btn btn-sm btn-default" title="{% i18n "Console" %}">
+                                            <span class="fa fa-film"></span>
+                                        </button>
+                                    {% endif %}
+                                    {% if inst.status == 1 %}
+                                        <button id="{{ inst.name }}_start" id='{{ inst.name }}"_start' class="btn btn-sm btn-default disabled" title="{% i18n "Start" %}">
+                                            <span class="fa fa-play"></span>
+                                        </button>
+                                        <button id='{{ inst.name }}_suspend' class="btn btn-sm btn-default" type="submit" name="suspend"
+                                                title="{% i18n "Suspend" %}"
+                                                onclick="return confirm('Are you sure?')">
+                                            <span class="fa fa-pause"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_shutdown" class="btn btn-sm btn-default" type="submit" name="shutdown"
+                                                title="{% i18n "Shutdown" %}"
+                                                onclick="return confirm('Are you sure?')">
+                                            <span class="fa fa-power-off"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_destroy"  class="btn btn-sm btn-default" type="submit" name="destroy"
+                                                title="{% i18n "Force Shutdown" %}"
+                                                onclick="return confirm('Are you sure?')">
+                                            <span class="fa fa-stop"></span>
+                                        </button>
+                                        <button id="{{ inst.name }}_reset" class="btn btn-sm btn-default" type="submit" name="reset"
+                                                title="{% i18n "Reset" %}"
+                                                onclick="return confirm('Are you sure?')">
+                                            <span class="fa fa-undo"></span>
+                                        </button>
+                                        <a href="#" id="{{ inst.name }}_console" class="btn btn-sm btn-default"
+                                           onclick='open_console("{{ host_id }}/{{ inst.uuid }}")' title="{% i18n "Console" %}">
+                                            <span class="fa fa-film"></span>
+                                        </a>
+                                    {% endif %}
+                                </form>
+                            </td>
                             <td>{% if inst.status == 1 %}
                                 <span class="label label-success">{% i18n "Running" %}</span>
                             {% endif %}
@@ -42,97 +129,15 @@
                                     {% endif %}
                                 {% endif %}
                                 {% if inst.status == 3 %}
-                                    <span class="label label-warning">{% i18n "Suspend" %}</span>
+                                    <span class="label label-warning">{% i18n "Suspended" %}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ inst.vcpu }}</td>
-                            <td>{{ inst.currentMemoryPretty }}</td>
-                            <td>
-                                <form action="" method="post" role="form">{{ csrf_token }}
-                                    <input type="hidden" name="name" value="{{ inst.name }}"/>
-                                    {% if inst.status == 5 %}
-                                        <button class="btn btn-sm btn-default" type="submit" name="start" title="Start">
-                                            <span class="glyphicon glyphicon-play"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
-                                            <span class="glyphicon glyphicon-pause"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Save" %}">
-                                            <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
-                                        {% if inst.has_managed_save_image == 1 %}
-                                            <button class="btn btn-sm btn-default" type="submit" name="deletesaveimage"
-                                                    title="{% i18n "Delete Save Image" %}"
-                                                    onclick='return confirm('Are you sure?')'>
-                                                <span class="glyphicon glyphicon-remove"></span>
-                                            </button>
-                                        {% else %}
-                                            <button class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
-                                                <span class="glyphicon glyphicon-off"></span>
-                                            </button>
-                                        {% endif %}
-                                        <button class="btn btn-sm btn-default disabled"
-                                                title="{% i18n "Force Shutdown" %}">
-                                            <span class="glyphicon glyphicon-stop"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Console" %}">
-                                            <span class="glyphicon glyphicon-align-justify"></span>
-                                        </button>
-                                    {% endif %}
-                                    {% if inst.status == 3 %}
-                                        <button class="btn btn-sm btn-default" type="submit" name="resume"
-                                                title="{% i18n "Resume" %}">
-                                            <span class="glyphicon glyphicon-play"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
-                                            <span class="glyphicon glyphicon-pause"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="managedsave"
-                                                title="{% i18n "Save" %}">
-                                            <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
-                                            <span class="glyphicon glyphicon-off"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled"
-                                                title="{% i18n "Force Shutdown" %}">
-                                            <span class="glyphicon glyphicon-stop"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Console" %}">
-                                            <span class="glyphicon glyphicon-align-justify"></span>
-                                        </button>
-                                    {% endif %}
-                                    {% if inst.status == 1 %}
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Start" %}">
-                                            <span class="glyphicon glyphicon-play"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="suspend"
-                                                title="{% i18n "Suspend" %}"
-                                                onclick="return confirm('Are you sure?')">
-                                            <span class="glyphicon glyphicon-pause"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="managedsave"
-                                                title="{% i18n "Save" %}"
-                                                onclick="return confirm('Are you sure?')">
-                                            <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="shutdown"
-                                                title="{% i18n "Shutdown" %}"
-                                                onclick="return confirm('Are you sure?')">
-                                            <span class="glyphicon glyphicon-off"></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="destroy"
-                                                title="{% i18n "Force Shutdown" %}"
-                                                onclick="return confirm('Are you sure?')">
-                                            <span class="glyphicon glyphicon-stop"></span>
-                                        </button>
-                                        <a href="#" class="btn btn-sm btn-default"
-                                           onclick='open_console("{{ host_id }}/{{ inst.uuid }}")' title="{% i18n "Console" %}">
-                                            <span class="glyphicon glyphicon-align-justify"></span>
-                                        </a>
-                                    {% endif %}
-                                </form>
-                            </td>
+                            <td style="text-align:right">{{ inst.vcpu }}</td>
+                            <td style="text-align:right"> {{ inst.currentMemoryPretty }} </td>
+                            <td>{{ inst.autostart }}</td>
+                            <td>{{ inst.description }}</td>
+                            <td>{{ inst.creationTime }}</td>
+                            <td>{{ inst.lastModificationTime }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -144,12 +149,216 @@
             </div>
         {% endif %}
     </div>
-    {% include 'sidebar_close.html' %}
+{% include 'sidebar_close.html' %}
+
+    <!-- Modal Custom Instance -->
+    <div class="modal fade" id="addCustom" tabindex="-1" role="dialog" aria-labelledby="addCustomLabel"
+         aria-hidden="true">
+        <div style="width:700px;" class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">{% i18n "Create New Instance" %}</h4>
+                </div>
+                <form id="form_create_instance" class="form-horizontal" method="post" role="form">{% c_csrf_token %}
+                    <div class="form-group">
+		        <input  name="create_new_instance" type="hidden" value=""/>
+                        <label class="col-sm-2 control-label">{% i18n "Name" %}</label>
+                        <div class="col-sm-5">
+                            <input autofocus  type="text" class="form-control" id="instance_name"  name="vm_name" placeholder="{% i18n "Enter the instance name" %}"
+                                    maxlength="14" pattern="[a-zA-Z0-9\.\-_]+" onkeyup="new_disk_name()" oninput="if (typeof this.reportValidity === 'function') {this.reportValidity();}" title="Instance name cannot contain special characters">
+                        </div>
+                        <div class="col-sm-4">
+ 		       <input name="autostart" checked type="checkbox" data-size="mini" data-toggle="switch"> Autostart
+		            <i class="icon fas fa-info-circle"  rel="popover" title="Autostart" data-content="Automatically start the Virtual Machine at the boot time."></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">{% i18n "VCPU" %}</label>
+                        <div class="col-sm-5">
+			   <! -- input type="number" id="vcpu" name="vcpu" required="required" class="form-control"  value="2"-->
+                             <select class="form-control" id="vcpu" name="vcpu" placeholder="CPUs">
+			           <option selected value="1">1</option>
+				   <option value="2">2</option>
+				   <option value="3">3</option>
+				   <option value="4">4</option>
+				   <option value="5">5</option>
+				   <option value="6">6</option>
+				   <option value="7">7</option>
+				   <option value="8">8</option>
+			   </select>
+                        </div>
+                        <div style="text-align: left" class="col-sm-4">
+		           <input name="host_model" type="checkbox" checked data-size="mini"  data-toggle="switch"> Host CPU
+		            <i class="icon fas fa-info-circle"  rel="popover" title="CPU Model" data-content="If enabled, it passes the host CPU model features, model, stepping, exactly to the instance. If disabled, the qemu64 will be used."></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">{% i18n "RAM" %}</label>
+                        <div class="col-sm-5">
+			     <!-- input type="number" value =2 id="vmemory" name="memory" required="required" class="form-control" -->   
+                             <select class="form-control" id="vmemory" name="memory" placeholder="RAM (MB)">
+			           <option value="256">256</option>
+				   <option value="512">512</option>
+				   <option value="768">768</option>
+				   <option selected value="1024">1024</option>
+				   <option value="2048">2048</option>
+				   <option value="3072">3072</option>
+				   <option value="4096">4096</option>
+				   <option value="6144">6144</option>
+				   <option value="8192">8192</option>
+				   <option value="10240">10240</option>
+				   <option value="12288">12288</option>
+				   <option value="16384">16384</option>
+				   <option value="32768">32768</option>
+				   <option value="65536">65536</option>
+			   </select>
+                        </div>
+                        <label style="text-align: left" class="col-sm-3 control-label">{% i18n "MB" %}</label>
+                    </div>
+		    <div class="form-group">
+                       <label class="col-sm-2 control-label">{% i18n "Settings" %}</label>
+                        <div class="col-sm-4">
+		       <input name="hv_relaxed" data-size="mini" type="checkbox" checked data-toggle="switch"> Relaxed 
+		       <i class="icon fas fa-info-circle"  rel="popover" title="Relaxed" data-content="Enables relaxed timing for the CPU. Enable this for Windows. For UNIX-based OS should be disabled."></i>
+                        </div>
+                        <div class="col-sm-3">
+		       <input name="hv_tsc" type="checkbox" data-size="mini" checked data-toggle="switch"> TSC
+		       <i class="icon fas fa-info-circle"  rel="popover" title="Time Stamp Counter" data-content="Enables the Time Stamp Counter for the CPU. Enable this for Windows. For UNIX-based OS should be disabled."></i>
+                        </div>
+                        <div class="col-sm-3">
+ 		       <input name="uefi" type="checkbox" data-size="mini" data-toggle="switch"> UEFI Boot 
+                        </div>
+                    </div>
+                    <hr> 
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">{% i18n "HDD" %}</label>
+                        <div class="col-sm-7">
+                            <!--input id="images" name="images" type="hidden" value=""/-->
+                            <select id="image-control" name="image-control" multiple="multiple">
+			      <optgroup class='def-cursor' label='Name' data-size='Size' data-format='Format'> 
+                                {% if get_images.size %}
+                                    {% for img in get_images %}
+                                        <option  value="{{ img.path }}" data-size="{{ img.size }}" data-format="{{ img.type }}">{{ img.name }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="">{% i18n "None" %}</option>
+                                {% endif %}
+			        </optgroup>
+                            </select>
+                        </div>
+                        <span data-toggle="modal" data-target="#AddImage">
+                            <button type="button" class="btn btn-default fas fa-plus"></button>
+                            <i class="icon fas fa-info-circle"  rel="popover" title="New File" data-content="Create a new empty Image file. This file will be created before the VM is defined."></i>
+                         </span>
+                        <span data-title="vm"  data-toggle="modal" data-target="#AddUpload">
+                            <button type="button" class="btn btn-default fas fa-upload"></button>
+			    <i class="icon fas fa-info-circle"  rel="popover" title="File Upload" data-content="Upload an existing file into Storage Pool. Supported file formats are (raw, qcow2, bochs, cloop, cow, dmg, nbd, parallels, qcow, qed, vdi, vhdx, vmdk and vvfat."></i>
+                         </span>
+			</div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">{% i18n "Caching" %}</label>
+                        <div class="col-sm-7">
+                            <select id="cache_mode" name="cache_mode" class="form-control">
+                                {% for mode, name in cache_modes %}
+                                    <option value="{{ mode }}">{{name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                       <label class="col-sm-1 control-label">{% i18n "Bus" %}</label>
+                       <div class="col-sm-2">
+			      <select  class="form-control select2-single" name="new_target_bus" >
+                                    <option value="virtio" selected="selected">virtio</option>
+                                    <option value="sata">sata</option>
+                                    <option value="scsi">scsi</option>
+                             </select>
+                        </div>
+                     </div>
+                    <hr> 
+       	            <div class="form-group">
+                        <label class="col-sm-2 control-label">{% i18n "Network" %}</label>
+                        <div class="col-sm-7">
+                            <!-- input id="networks" type="hidden" name="networks" value=""/-->
+                            <select id="network-control" name="network-control" multiple="multiple">
+			      <optgroup class='def-cursor' label='Name' data-forward='Type' data-network='Network' data-dhcp='DHCP'>
+                                {% for network in networks %}
+  				    <option value="{{ network.name }}"  data-forward="{{ network.forwardMode }}" data-network="{{ network.ipAddress }}" {% if network.ipDhcpRangeStart and network.ipDhcpRangeEnd %} data-dhcp="Yes" {% else %} data-dhcp="No" {% endif %}>{{ network.name }}</option>
+                                {% endfor %}
+			      </optgroup>
+                            </select>
+			  </div>
+                        <label class="col-sm-1 control-label">{% i18n "Model" %}</label>
+                        <div class="col-sm-2">
+                              <select  class="form-control select2-single"  name="new_nic_type" >
+                                  <option value="virtio" selected="selected">virtio</option>
+                                  <option value="e1000">e1000</option>
+                                  <option value="rtl8139">rtl8139</option>
+                              </select>
+                       </div>
+                    </div>
+                   <hr>		    
+                <div class="form-group">
+                     <label class="col-sm-2 control-label">{% i18n "CDROMs" %} </label>
+		     <div class="col-sm-7">
+                            <!-- input id="cdroms" type="hidden" name="cdroms" value=""/-->
+                            <select id="cdroms-control" name="cdroms-control"   multiple="multiple">
+			      <optgroup class='def-cursor' label='Name' data-size='Size'> 
+                                {% if host.isoMedia.size %}
+                                    {% for iso in host.isoMedia %}
+                                        <option  value="{{ iso.path }}" data-size="{{ iso.size }}">{{ iso.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+		             </optgroup>	
+                            </select>
+                        </div>
+                        <span data-title="iso"  data-toggle="modal" data-target="#AddUpload">
+                            <button type="button" class="btn btn-default fas fa-upload"></button>
+                            <i class="icon fas fa-info-circle"  rel="popover" title="File upload" data-content="Upload ISO files from your local drive into Storage Pool."></i>
+                         </span>
+		    </div>
+                <div id="boot-control_div" style="display: none;" class="form-group">
+                     <label class="col-sm-2 control-label">{% i18n "Boot from" %} </label>
+                        <div class="col-sm-7">
+                              <select id="boot-control" class="form-control select2-single"  name="boot-control" >
+                              </select>
+                       </div>
+                   </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{% i18n "Close" %}</button>
+                        {% if storages.size %}
+                            <button type="button" disabled id="create_instance_button"  onclick="create_instance()" class="btn btn-primary" name="create" value="1">{% i18n "Create Instance" %}</button>
+                        {% else %}
+                            <button class="btn btn-primary disabled">{% i18n "Create" %}</button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+{% include 'modal/modal_file_upload.html' %}
+{% include 'modal/modal_add_image.html' %}
+
 {% endblock %}
 {% block script %}
-    <script>
-        function status() {
-            $.getJSON('/info/insts_status/{{ host_id }}', function (data) {
+<script>
+
+
+//window.addEventListener("beforeunload", function (e) {
+//    insts_status_source.close();
+//});
+
+
+// var insts_status_source = new EventSource('/info/events/{{ host_id }}/2');
+
+//insts_status_source.onmessage = function (event) {
+
+event_source.addEventListener("all_vm_status", function(event) {
+
+                 var data=JSON.parse(event.data);
                 for (var i = 0; i < data.length; i++) {
                     var elem = '#' + data[i]['name']
                     if (data[i]['status'] === 1) {
@@ -158,113 +367,339 @@
                                     + "<span class='glyphicon glyphicon-remove'></span>"
                                     + "</button> ";
                         } else {
-                            var btn = "<button class='btn btn-sm btn-default' type='submit' name='shutdown' title='{% i18n "Shutdown" %}' onclick='return confirm('Are you sure?')'>"
-                                    + "<span class='glyphicon glyphicon-off'></span>"
+                            var btn = "<button id='"+ data[i]['name'] + "_shutdown' class='btn btn-sm btn-default' type='submit' name='shutdown' title='{% i18n "Shutdown" %}' onclick='return confirm('Are you sure?')'>"
+                                    + "<span class='fa fa-power-off'></span>"
                                     + "</button> ";
                         }
-                        $(elem).html("<td><a href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
-                                + "<td><span class='label label-success'>{% i18n "Running" %}</span></td>"
-                                + "<td>" + data[i]['vcpu'] + "</td>"
-                                + "<td>" + data[i]['memory'] + "</td>"
+                        $(elem).html("<td><a id='instance_" + data[i]['name'] + "' href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
+                                + "<form action='' method='post'>"+ '{% c_csrf_token %}'
                                 + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Start" %}'>"
-                                + "<span class='glyphicon glyphicon-play'></span>"
+                                + "<button id='"+ data[i]['name'] + "_start' class='btn btn-sm btn-default disabled' title='{% i18n "Start" %}'>"
+                                + "<span class='fa fa-play'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default' type='submit' name='suspend' title='{% i18n "Suspend" %}' onclick='return confirm('Are you sure?')'>"
-                                + "<span class='glyphicon glyphicon-pause'></span>"
-                                + "</button> "
-                                + "<button class='btn btn-sm btn-default' type='submit' name='managedsave' title='{% i18n "Save" %}' onclick='return confirm('Are you sure?')'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
+                                + "<button id='"+ data[i]['name'] + "_suspend' class='btn btn-sm btn-default' type='submit' name='suspend' title='{% i18n "Suspend" %}' onclick='return confirm('Are you sure?')'>"
+                                + "<span class='fa fa-pause'></span>"
                                 + "</button> "
                                 + btn
-                                + "<button class='btn btn-sm btn-default' type='submit' name='destroy' title='{% i18n "Force Shutdown" %}' onclick='return confirm('Are you sure?')'>"
-                                + "<span class='glyphicon glyphicon-stop'></span>"
+                                + "<button id='"+ data[i]['name'] + "_shutdown' class='btn btn-sm btn-default' type='submit' name='destroy' title='{% i18n "Force Shutdown" %}' onclick='return confirm('Are you sure?')'>"
+                                + "<span class='fa fa-stop'></span>"
+                                + "</button> "
+                                + "<button id='"+ data[i]['name'] + "_reset' class='btn btn-sm btn-default' type='submit' name='reset' title='{% i18n "Reset" %}' onclick='return confirm('Are you sure?')'>"
+                                + "<span class='fa fa-undo'></span>"
                                 + "</button> "
                                 + "<a href='#' class='btn btn-sm btn-default' onclick='open_console(\"" + data[i]['host'] + "/" + data[i]['uuid'] + "\")' title='{% i18n "Console" %}'>"
-                                + "<span class='glyphicon glyphicon-align-justify'></span>"
+                                + "<span class='fa fa-film'></span>"
                                 + "</a> "
                                 + "</form>"
-                                + "</td>");
+                                + "</td>"
+                                + "<td><span class='label label-success'>{% i18n "Running" %}</span></td>"
+                                + "<td style='text-align:right'>" + data[i]['vcpu'] + "</td>"
+                                + "<td style='text-align:right'>" + data[i]['memory'] + "</td>"
+                                + "<td>" + data[i]['autostart'] + "</td>"
+                                + "<td>" + data[i]['description'] + "</td>"
+                                + "<td>" + data[i]['creationTime'] + "</td>"
+                                + "<td>" + data[i]['lastModificationTime'] + "</td>"
+				);
                     }
                     if (data[i]['status'] === 3) {
-                        $(elem).html("<td><a href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
-                                + "<td><span class='label label-warning'>{% i18n "Suspend" %}</span></td>"
-                                + "<td>" + data[i]['vcpu'] + "</td>"
-                                + "<td>" + data[i]['memory'] + "</td>"
+                        $(elem).html("<td><a id='instance_" + data[i]['name'] + "' href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
-                                + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
+                                + "<form action='' method='post'>" + '{% c_csrf_token %}'
+                                + "<input id='"+ data[i]['name'] + "_resume' type='hidden' name='name' value='" + data[i]['name'] + "' />"
                                 + "<button class='btn btn-sm btn-default' type='submit' name='resume' title='{% i18n "Resume" %}'>"
-                                + "<span class='glyphicon glyphicon-play'></span>"
+                                + "<span class='fas fa-forward'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
-                                + "<span class='glyphicon glyphicon-pause'></span>"
+                                + "<button id='"+ data[i]['name'] + "_suspend' class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
+                                + "<span class='fa fa-pause'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default' type='submit' name='managedsave' title='{% i18n "Save" %}'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
+                                + "<button id='"+ data[i]['name'] + "_shutdown' class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
+                                + "<span class='fa fa-power-off''></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
-                                + "<span class='glyphicon glyphicon-off''></span>"
+                                + "<button id='"+ data[i]['name'] + "_destroy' class='btn btn-sm btn-default enabled' type='submit' title='{% i18n "Force Shutdown" %}'>"
+                                + "<span class='fa fa-stop'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Force Shutdown" %}'>"
-                                + "<span class='glyphicon glyphicon-stop'></span>"
+                                + "<button id='"+ data[i]['name'] + "_reset'  class='btn btn-sm btn-default enabled' type='submit' title='{% i18n "Reset" %}'>"
+                                + "<span class='fa fa-undo'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Console" %}'>"
-                                + "<span class='glyphicon glyphicon-align-justify'></span>"
+                                + "<button id='"+ data[i]['name'] + "_console' class='btn btn-sm btn-default disabled' title='{% i18n "Console" %}'>"
+                                + "<span class='fa fa-film'></span>"
                                 + "</button> "
                                 + "</form>"
-                                + "</td>");
+                                + "</td>"
+                                + "<td><span class='label label-warning'>{% i18n "Suspended" %}</span></td>"
+                                + "<td style='text-align:right'>" + data[i]['vcpu'] + "</td>"
+                                + "<td style='text-align:right'>" + data[i]['memory'] + "</td>"
+                                + "<td>" + data[i]['autostart'] + "</td>"
+                                + "<td>" + data[i]['description'] + "</td>"
+                                + "<td>" + data[i]['creationTime'] + "</td>"
+                                + "<td>" + data[i]['lastModificationTime'] + "</td>"
+				);
                     }
                     if (data[i]['status'] == 5) {
-                        $(elem).html("<td><a href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
-                                + "<td><span class='label label-danger'>{% i18n "Shutoff" %}</span></td>"
-                                + "<td>" + data[i]['vcpu'] + "</td>"
-                                + "<td>" + data[i]['memory'] + "</td>"
+                        $(elem).html("<td><a id='instance_" + data[i]['name'] + "' href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
+                                + "<form action='' method='post'>" + '{% c_csrf_token %}'
                                 + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
-                                + "<button class='btn btn-sm btn-default' type='submit' name='start' title='{% i18n "Start" %}'>"
-                                + "<span class='glyphicon glyphicon-play'></span>"
+                                + "<button id='"+ data[i]['name'] + "_start' class='btn btn-sm btn-default' type='submit' name='start' title='{% i18n "Start" %}'>"
+                                + "<span class='fa fa-play'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
-                                + "<span class='glyphicon glyphicon-pause'></span>"
+                                + "<button id='"+ data[i]['name'] + "_suspend' class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
+                                + "<span class='fa fa-pause'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Save" %}'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
+                                + "<button id='"+ data[i]['name'] + "_shutdown' class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
+                                + "<span class='fa fa-power-off'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
-                                + "<span class='glyphicon glyphicon-off'></span>"
+                                + "<button id='"+ data[i]['name'] + "_destroy' class='btn btn-sm btn-default disabled' title='{% i18n "Force Shutdown" %}'>"
+                                + "<span class='fa fa-stop'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Force Shutdown" %}'>"
-                                + "<span class='glyphicon glyphicon-stop'></span>"
+                                + "<button id='"+ data[i]['name'] + "_reset' class='btn btn-sm btn-default disabled' title='{% i18n "Reset" %}'>"
+                                + "<span class='fa fa-undo'></span>"
                                 + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Console" %}'>"
-                                + "<span class='glyphicon glyphicon-align-justify'></span>"
+                                + "<button id='"+ data[i]['name'] + "_console' class='btn btn-sm btn-default disabled' title='{% i18n "Console" %}'>"
+                                + "<span class='fa fa-film'></span>"
                                 + "</button> "
                                 + "</form>"
-                                + "</td>");
-                    }
+                                + "</td>"
+                                + "<td><span class='label label-danger'>{% i18n "Shutoff" %}</span></td>"
+                                + "<td style='text-align:right'>" + data[i]['vcpu'] + "</td>"
+                                + "<td style='text-align:right'>" + data[i]['memory'] + "</td>"
+                                + "<td>" + data[i]['autostart'] + "</td>"
+                                + "<td>" + data[i]['description'] + "</td>"
+                                + "<td>" + data[i]['creationTime'] + "</td>"
+                                + "<td>" + data[i]['lastModificationTime'] + "</td>"
+				);
                 }
-            });
-        }
+            }
+        });
+
         $(function () {
-            window.setInterval('status()', {{ time_refresh }});
+         //   window.setInterval('status()', {{ time_refresh }});
+
+        if (is_function("ShowAlert")){
+              ShowAlert();
+          }  
+
         });
         function open_console(uuid) {
             window.open("/console/" + uuid, "", "width=850,height=485");
         }
     </script>
-    <script src="/static/js/jquery.tablesorter.js"></script>
+    <script src="/static/js/jquery.tablesorter.min.js"></script>
+    <script src="/static/js/jquery/jquery.form.min.js"></script>
     <script>
+    function is_function(func) {
+        return typeof window[func] !== 'undefined' && $.isFunction(window[func]);
+     }
         $(function() {
             $("#sortTable").tablesorter({
                 ignoreCase: true,
-                sortList: [[1,0], [0,0]],
+                sortList: [[0,0]],
                 headers: {4: {sorter: false}},
                 textSorter: {0: $.tablesorter.sortText}
             });
         });
     </script>
+
+
+    <script>
+        function toggleValue(string, updated_value, checked) {
+            var result = '';
+            if (checked) {
+                result = string;
+                if (result != '') result += ',';
+                result += updated_value;
+            } else {
+                $.each(string.split(','), function (index, value) {
+                    if (value == updated_value) return;
+                    if (result != '') result += ',';
+                    result += value;
+                });
+            }
+            return result;
+        }
+
+
+
+
+function formatResultMultiImages(data) {
+  var size = $(data.element).data('size');
+  var format = $(data.element).data('format');
+  var classAttr = $(data.element).attr('class');
+  var hasClass = typeof classAttr != 'undefined';
+  classAttr = hasClass ? ' ' + classAttr : '';
+
+  var $result = $(
+    '<div class="row">' +
+    '<div class="col-md-5 col-xs-5' + classAttr + '">' + data.text + '</div>' +
+    '<div class="col-md-3 col-xs-3' + classAttr + '">' + size + '</div>' +
+    '<div class="col-md-1 col-xs-1' + classAttr + '">' + format + '</div>' +
+    '</div>'
+  );
+  return $result;
+}
+
+function formatResultMultiCdroms(data) {
+  var size = $(data.element).data('size');
+  var classAttr = $(data.element).attr('class');
+  var hasClass = typeof classAttr != 'undefined';
+  classAttr = hasClass ? ' ' + classAttr : '';
+
+  var $result = $(
+    '<div class="row">' +
+    '<div class="col-md-7 col-xs-7' + classAttr + '">' + data.text + '</div>' +
+    '<div class="col-md-3 col-xs-3' + classAttr + '">' + size + '</div>' +
+    '</div>'
+  );
+  return $result;
+}
+
+
+function formatResultMultiNetwork(data) {
+  var forward = $(data.element).data('forward');
+  var network = $(data.element).data('network');
+  var dhcp = $(data.element).data('dhcp');
+  var classAttr = $(data.element).attr('class');
+  var hasClass = typeof classAttr != 'undefined';
+  classAttr = hasClass ? ' ' + classAttr : '';
+
+  var $result = $(
+    '<div class="row">' +
+    '<div class="col-md-2 col-xs-2' + classAttr + '">' + data.text + '</div>' +
+    '<div class="col-md-2 col-xs-2' + classAttr + '">' + forward + '</div>' +
+    '<div class="col-md-5 col-xs-5' + classAttr + '">' + network + '</div>' +
+    '<div class="col-md-1 col-xs-1' + classAttr + '">' + dhcp + '</div>' +
+    '</div>'
+  );
+  return $result;
+}
+
+
+$(function() {
+  $('#network-control').select2({
+    width: '100%',
+    placeholder: "Select a network",
+    allowClear: true,
+    formatResult: formatResultMultiNetwork
+  });
+})
+
+
+$(function() {
+  $('#image-control').select2({
+    sorter: data => data.sort((a, b) => a.text.localeCompare(b.text)),
+    width: '100%',
+    placeholder: "Select an image",
+    allowClear: true,
+    formatResult: formatResultMultiImages
+  });
+})
+
+
+$(function() {
+  $('#cdroms-control').select2({
+    sorter: data => data.sort((a, b) => a.text.localeCompare(b.text)),
+    width: '100%',
+    placeholder: "Select an ISO",
+    allowClear: true,
+    maximumSelectionSize: 2,
+    formatResult: formatResultMultiCdroms,
+  });
+})
+
+
+
+$('#cdroms-control').change(function(){
+   values=$(this).select2("data");
+   var count = $(this).select2('data').length;
+   if (count<1) {
+      document.getElementById('boot-control_div').style.display = "none";
+      }
+   else{
+      $('#boot-control').empty();
+      for (i = 0; i < count; i++) {
+	   var newOption = new Option(values[i].text, values[i].id, false, false);
+	    $('#boot-control').append(newOption).trigger('change'); 
+      } 	   
+
+      document.getElementById("boot-control_div").style.display = "block";
+   }
+});
+
+$(".modal-header").on("mousedown", function(mousedownEvt) {
+    var $draggable = $(this);
+    var x = mousedownEvt.pageX - $draggable.offset().left,
+        y = mousedownEvt.pageY - $draggable.offset().top;
+    $("body").on("mousemove.draggable", function(mousemoveEvt) {
+        $draggable.closest(".modal-dialog").offset({
+            "left": mousemoveEvt.pageX - x,
+            "top": mousemoveEvt.pageY - y
+        });
+    });
+    $("body").one("mouseup", function() {
+        $("body").off("mousemove.draggable");
+    });
+    $draggable.closest(".modal").one("bs.modal.hide", function() {
+        $("body").off("mousemove.draggable");
+    });
+});
+
+$('#newImageSave').click(function(){
+    var storage_pool = $('#storage_pool_image').find(':selected').val();
+    var storage_pool_path = $('#storage_pool_image').find(':selected').data('path');
+    var image_format = $('#image_format').find(':selected').val();
+    var image_size = document.getElementById("image_size").value;
+    var image_name = document.getElementById("image_name").value;
+    var meta_prealloc = document.getElementById("meta_prealloc").checked;
+  $('#image-control').append('<optgroup class=\'def-cursor\' label=\'New Images\' data-size=\'\' data-format=\'\'> <option selected="selected" value="new_disk_qaz:'+storage_pool+':'+image_name+':'+image_size+':'+image_format+':'+meta_prealloc+':'+storage_pool_path+'/'+image_name+'" data-size="'+image_size+' GB" data-format="'+image_format+'">'+image_name+'</option> </optgroup>').trigger('change');
+ });
+
+function new_disk_name()
+{
+  var n1 = document.getElementById('instance_name');
+  var n2 = document.getElementById('image_name');
+  n2.value = n1.value+'_disk1';
+}
+
+
+function create_instance() {
+       return eModal
+                .confirm('Are you sure you want to create this Instance?','Attention')
+                .then(
+                    function () { 
+                      document.getElementById('form_create_instance').submit();
+                             }
+                    );
+
+  }
+
+var file_upload_type;
+
+
+
+document.getElementById("instance_name").addEventListener("keyup", function() {
+    var nameInput = document.getElementById('instance_name').value;
+    if (nameInput != "") {
+        document.getElementById('create_instance_button').removeAttribute("disabled");
+    } else {
+        document.getElementById('create_instance_button').setAttribute("disabled", null);
+    }
+});
+
+
+
+
+$('#instance_name').on('input', function(e) {
+   this.setCustomValidity('')
+     // e.target.checkValidity()
+     this.reportValidity();
+   })
+
+$('.modal').on('shown.bs.modal', function() {
+  $(this).find('[autofocus]').focus();
+});
+
+</script>
+
+
 {% endblock %}

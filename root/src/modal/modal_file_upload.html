@@ -1,0 +1,41 @@
+<!-- Modal Upload -->
+<div class="modal fade" id="AddUpload" tabindex="-1" role="dialog" aria-labelledby="IsoUploadLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 id="AddUpload_id" class="modal-title">{% i18n "Upload Image" %}</h4>
+            </div>
+            <form class="form-horizontal" enctype="multipart/form-data" method="post" role="form">{% c_csrf_token %}
+                <div class="form-group" id="storage_pool_upload">
+                    <label class="col-sm-3 control-label">{% i18n "Storage Pool" %}</label>
+                    <div class="col-sm-6">
+                    {% for pool in storages %}
+                        <select name="storage_pool" class="form-control image-format">
+                            <option data-path= {{ pool.path }} value={{ pool.name }}>{{ pool.name }}</option>
+                        </select>
+                     {% endfor %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
+                    <input  name="file_upload" type="hidden" value=""/>
+                    <div class="col-sm-6">
+                        <input type="file" name="file" multiple id="id_file">
+                    </div>
+                </div>
+                <div id="upload_progress" class="progress">
+		   <div id="upload_progress_bar" class="progress-bar  progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{% i18n "Close" %}</button>
+		    <button id="cancelBtn" style="background-color:red" type="button" class="btn btn-default">Cancel</button>
+                    <button type="submit" class="btn btn-primary" >{% i18n "Upload File" %}</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div><!-- /.modal -->

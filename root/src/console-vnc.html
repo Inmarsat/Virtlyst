@@ -48,6 +48,7 @@
 
     var rfb;
 
+
     function passwordRequired(rfb) {
         var modal;
         modal = '<div class="modal fade">';
@@ -80,6 +81,35 @@
     function sendCtrlAltDel() {
         rfb.sendCtrlAltDel();
         return false;
+    }
+    
+    function sendAction(instance,action){
+
+       var vm=instance;
+       return eModal
+                .confirm('Are you sure to ' + action + ' the ' + vm,'Attention')
+                .then(
+                    function () { 
+                            var form = document.createElement("form");
+                            var element1 = document.createElement("input");
+                            var csrf = document.createElement("input");
+                            csrf.type="hidden";
+                            csrf.value="{{ csrf_token }}";
+                            csrf.name="csrfprotectiontoken";
+                            form.method = "POST";
+
+                            element1.value=vm;
+                            element1.name=action;
+                            form.appendChild(element1);
+                            form.appendChild(csrf);
+                            document.body.appendChild(form);
+
+                            form.submit();
+
+                             }
+                    );
+
+
     }
 
     function sendCtrlAltFN(f) {
@@ -130,9 +160,15 @@
                 break;
             case 'normal':
                 level = "info";
+                document.getElementById('start_item').className = "disabled"; 
+		document.getElementById('stop_item').className=""; 
+		document.getElementById('reset_item').className=""; 
                 break;
             case 'disconnected':
                 level = "info";
+                document.getElementById('start_item').className = "";
+                document.getElementById('stop_item').className="disabled";
+		document.getElementById('reset_item').className="disabled"; 
                 break;
             case 'loaded':
                 level = "info";
@@ -162,6 +198,9 @@
 
     window.onscriptsload = function () {
         var host, port, password, path, token;
+
+                document.getElementById("stop_item").disabled=true; 
+                 document.getElementById("start_item").disabled=false;
 
         // dirty fix for keyboard on iOS devices
         if (isTouchDevice) {
@@ -201,4 +240,12 @@
         rfb.connect(host, port, password, path);
     };
 </script>
+
+<style>
+    .disabled {
+        pointer-events: none;
+        cursor: default;
+    }
+</style>
+
 {% endblock %}

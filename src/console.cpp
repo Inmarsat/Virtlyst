@@ -19,6 +19,7 @@
 #include "virtlyst.h"
 #include "lib/connection.h"
 #include "lib/domain.h"
+#include <Cutelyst/Plugins/CSRFProtection/CSRFProtection>
 
 #include <libvirt/libvirt.h>
 
@@ -43,6 +44,11 @@ void Console::index(Context *c, const QString &hostId, const QString &uuid)
         c->response()->redirect(c->uriForAction(QStringLiteral("/index")));
         return;
     }
+
+    auto csrf_token = CSRFProtection::getToken(c);
+    c->setStash(QStringLiteral("csrf_token"), csrf_token);
+
+
     c->setStash(QStringLiteral("host"), QVariant::fromValue(conn));
 
     Domain *dom = conn->getDomainByUuid(uuid, c);
@@ -53,19 +59,46 @@ void Console::index(Context *c, const QString &hostId, const QString &uuid)
     }
 
     const QString type = dom->consoleType();
-    if (type == QLatin1String("spice")) {
-        c->setStash(QStringLiteral("template"), QStringLiteral("console-spice.html"));
-    } else if (type == QLatin1String("vnc")) {
-        c->setStash(QStringLiteral("template"), QStringLiteral("console-vnc.html"));
-    } else {
-        qCDebug(V_CONSOLE) << "Console type not known for domain" << uuid;
-        return;
-    }
+    c->setStash(QStringLiteral("template"), QStringLiteral("console-vnc.html"));
+//    if (type == QLatin1String("spice")) {
+//        c->setStash(QStringLiteral("template"), QStringLiteral("console-spice.html"));
+//    } else if (type == QLatin1String("vnc")) {
+//        c->setStash(QStringLiteral("template"), QStringLiteral("console-vnc.html"));
+//    } else {
+//        qCDebug(V_CONSOLE) << "Console type not known for domain" << uuid;
+//        return;
+//    }
     const QUrl uri = c->request()->uri();
     c->setStash(QStringLiteral("domain"), QVariant::fromValue(dom));
     c->setStash(QStringLiteral("ws_host"), uri.host());
     c->setStash(QStringLiteral("ws_port"), uri.port(c->request()->secure() ? 443 : 80));
+// qDebug() << "ws_port:" << uri.port(c->request()->secure() ? 443 : 80);    
     c->setStash(QStringLiteral("console_passwd"), dom->consolePassword());
     const QString path = QLatin1String("ws/") + hostId + QLatin1Char('/') + uuid;
     c->setStash(QStringLiteral("ws_path"), path);
+
+    if (c->request()->isPost()) {
+        if (!CSRFProtection::checkPassed(c)) return;
+        ParamsMultiMap params = c->request()->bodyParameters();
+// qDebug() << params;
+        params.remove("csrfprotectiontoken");
+	Domain *domain;
+            if (params.contains(QStringLiteral("start"))){
+                 domain = conn->getDomainByName(params.values(QStringLiteral("start"))[0], c);	
+                        if (!domain->start()) {
+                             errors.append(domain->getErrors());
+               }
+            } else if (params.contains(QStringLiteral("stop"))){
+                 domain = conn->getDomainByName(params.values(QStringLiteral("stop"))[0], c);	
+                     domain->destroy();
+            } else if (params.contains(QStringLiteral("reset"))){
+                 domain = conn->getDomainByName(params.values(QStringLiteral("reset"))[0], c);	
+                    domain->reset();
+           }
+
+
+
+    }
+
+
 }

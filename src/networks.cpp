@@ -17,6 +17,7 @@
 #include "networks.h"
 
 #include <QNetworkAddressEntry>
+#include <Cutelyst/Plugins/Authentication/authentication.h>
 
 #include "virtlyst.h"
 #include "lib/connection.h"
@@ -30,6 +31,9 @@ Networks::Networks(Virtlyst *parent) : Controller(parent)
 
 void Networks::index(Context *c, const QString &hostId)
 {
+    if (m_virtlyst->servers(c).count() == 1 )
+         c->setStash(QStringLiteral("vesselname"), QVariant::fromValue(m_virtlyst->servers(c)[0]->vesselname));
+
     c->setStash(QStringLiteral("template"), QStringLiteral("networks.html"));
     c->setStash(QStringLiteral("host_id"), hostId);
 
@@ -40,6 +44,10 @@ void Networks::index(Context *c, const QString &hostId)
         return;
     }
     c->setStash(QStringLiteral("host"), QVariant::fromValue(conn));
+
+    auto user = Authentication::user(c);
+    user.setId(user.value("username").toString());
+    c->setStash(QStringLiteral("user"), user.value("username").toString());
 
     if (c->request()->isPost()) {
         c->response()->redirect(c->uriFor(CActionFor(QStringLiteral("index")), QStringList{ hostId }));

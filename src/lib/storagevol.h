@@ -20,7 +20,7 @@
 
 #include <QObject>
 #include <QDomDocument>
-
+#include <Cutelyst/Upload>
 #include <libvirt/libvirt.h>
 
 class Domain;
@@ -31,6 +31,7 @@ class StorageVol : public QObject
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(QString type READ type CONSTANT)
     Q_PROPERTY(QString size READ size CONSTANT)
+    Q_PROPERTY(QString r_size READ r_size CONSTANT)
     Q_PROPERTY(QString usedby READ usedby CONSTANT)
     Q_PROPERTY(QString path READ path CONSTANT)
 public:
@@ -39,14 +40,19 @@ public:
     QString name();
     QString type();
     QString size();
+    QString r_size();
+
     QString usedby();
     QString path();
 
     bool undefine(int flags = 0);
     StorageVol *clone(const QString &name, const QString &format, int flags);
 
+    bool expandStorageVolume(const qint64 &increase_by);
+    void upload(Cutelyst::Upload* upload);
     StoragePool *pool();
-
+    QStringList getErrors();
+    void delErrors();
 private:
     bool getInfo();
     QDomDocument xmlDoc();

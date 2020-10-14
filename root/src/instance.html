@@ -2,23 +2,47 @@
 {% block title %}{% i18n "VMs" %} - {{ domain.name }}{% endblock %}
 {% block content %}
     {% include 'sidebar.html' %}
-    <div class="main col-xs-12 col-sm-9">
+    <div class="col-md-9 col-md-offset-2 content">
     {% if errors %}
         {% for error in errors %}
-            <div class="alert alert-danger">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                {{ error }}
-            </div>
+	    <script type="text/javascript">
+                function ShowAlert() {
+                     var title = 'FleetCompute Errors';
+
+                    return eModal
+                              .alert('{{ error }}' , title);
+                     };
+             </script>
         {% endfor %}
     {% endif %}
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-success">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                {{ message }}
-            </div>
+          <script type="text/javascript">
+                function ShowMessage() {
+                        toastr.options = {
+                          "closeButton": true,
+                          "debug": false,
+                          "newestOnTop": false,
+                          "progressBar": true,
+                          "positionClass": "toast-bottom-center",
+                          "preventDuplicates": false,
+                          "onclick": null,
+                          "showDuration": "300",
+                          "hideDuration": "1000",
+                          "timeOut": "5000",
+                          "extendedTimeOut": "1000",
+                          "showEasing": "swing",
+                          "hideEasing": "linear",
+                          "showMethod": "fadeIn",
+                          "hideMethod": "fadeOut"
+                        }
+                    return toastr.success('{{ message }}',"FleetCompute");
+                     };
+             </script>
         {% endfor %}
     {% endif %}
+  <br>             
+   <div class="table-responsive">
     <table class="table">
         <thead>
         <tr class="active">
@@ -26,7 +50,10 @@
             <th>{% i18n "Status" %}</th>
             <th>{% i18n "VCPUs" %}</th>
             <th>{% i18n "Memory" %}</th>
+            <th>{% i18n "AutoStart" %}</th>
             <th>{% i18n "Description" %}</th>
+            <th>{% i18n "Created" %}</th>
+            <th>{% i18n "Last Modified" %}</th>
         </tr>
         </thead>
         <tbody>
@@ -41,7 +68,7 @@
                     {% endif %}
                 {% endif %}
                 {% if domain.status == 1 %}"label label-success">{% i18n "Running" %}{% endif %}
-                {% if domain.status == 3 %}"label label-warning">{% i18n "Suspend" %}{% endif %}
+                {% if domain.status == 3 %}"label label-warning">{% i18n "Suspended" %}{% endif %}
                             </span>
             {% else %}
                 {% i18n "None" %}
@@ -49,53 +76,58 @@
             </td>
             <td>{% if domain.currentVcpu %}{{ domain.currentVcpu }}{% else %}{{ domain.vcpu }}{% endif %}</td>
             <td>{{ domain.currentMemoryPretty }}</td>
+            <td>{{ domain.autostart }}</td>
             <td>{{ domain.description }}</td>
+            <td>{{ domain.creationTime }}</td>
+            <td>{{ domain.lastModificationTime }}</td>
         <tr>
         </tbody>
     </table>
+</div>
+
     <hr>
     <ul id="btnsection" class="nav nav-tabs">
         <li class="active">
-            <a class="inst-btn" href="#power" data-toggle="tab">
-                <span class="glyphicon glyphicon-off"></span><br>{% i18n "Power" %}
+            <a id="tab_power" class="inst-btn" href="#power" data-toggle="tab">
+                <span class="fas fa-power-off"></span><br>{% i18n "Power" %}
             </a>
         </li>
-        <li><a class="inst-btn" href="#access" data-toggle="tab">
-            <span class="glyphicon glyphicon-briefcase"></span><br>{% i18n "Access" %}
+        <li><a id="tab_access" class="inst-btn" href="#access" data-toggle="tab">
+            <span class="fas fa-desktop"></span><br>{% i18n "Access" %}
         </a>
         </li>
-        <li><a class="inst-btn" href="#snapshots" data-toggle="tab">
-            <span class="glyphicon glyphicon-camera"></span><br>{% i18n "Snapshots" %}
+        <li><a id="tab_snapshots" class="inst-btn" href="#snapshots" data-toggle="tab">
+            <span class="fas fa-camera"></span><br>{% i18n "Snapshots" %}
         </a>
         </li>
-        <li><a class="inst-btn" href="#graph" data-toggle="tab">
-            <span class="glyphicon glyphicon-signal"></span><br>{% i18n "Statistics" %}
+        <li><a id="tab_graph" class="inst-btn" href="#graph" data-toggle="tab">
+            <span class="fas fa-chart-bar"></span><br>{% i18n "Statistics" %}
         </a>
         </li>
-        <li><a class="inst-btn" href="#settings" data-toggle="tab">
-            <span class="glyphicon glyphicon-wrench"></span><br>{% i18n "Settings" %}
+        <li><a id="tab_settings" class="inst-btn" href="#settings" data-toggle="tab">
+            <span class="fas fa-cogs"></span><br>{% i18n "Settings" %}
         </a>
         </li>
-        <li><a class="inst-btn" href="#migrate" data-toggle="tab">
+       <!-- <li><a class="inst-btn" href="#migrate" data-toggle="tab">
             <span class="glyphicon glyphicon-cloud-download"></span><br>{% i18n "Migrate" %}
         </a>
-        </li>
-        <li><a class="inst-btn" href="#delete" data-toggle="tab">
-            <span class="glyphicon glyphicon-trash"></span><br>{% i18n "Destroy" %}
+       </li>-->
+        <li><a id="tab_delete" class="inst-btn" href="#delete" data-toggle="tab">
+            <span class="fas fa-trash-alt"></span><br>{% i18n "Destroy" %}
         </a>
         </li>
     </ul>
     <div class="tab-content">
     <div class="tab-pane active" id="power" style="margin-top: 20px">
-        <ul class="nav nav-tabs nav-btn-act">
-            <li class="active"><a href="#shutdown" data-toggle="tab">{% if domain.status == 5 %}{% i18n "Start" %}{% else %}{% i18n "Shutdown" %}{% endif %}</a></li>
+        <ul class="nav nav-tabs">
+            <li class="active"><a id="tab_shutdown" href="#shutdown" data-toggle="tab">{% if domain.status == 5 %}{% i18n "Start" %}{% else %}{% i18n "Shutdown" %}{% endif %}</a></li>
             {% if domain.status != 5 %}
-            <li><a href="#forceshutdown" data-toggle="tab">{% i18n "Force Shutdown" %}</a></li>
-            <li><a href="#suspend" data-toggle="tab">{% i18n "Suspend" %}</a></li>
+            <li><a id="tab_forceshutdown" href="#forceshutdown" data-toggle="tab">{% i18n "Force Shutdown" %}</a></li>
+            <li><a id="tab_suspend" href="#suspend" data-toggle="tab">{% i18n "Suspend" %}</a></li>
             {% endif %}
-            {% if domain.status != 5 or domain.hasManagedSaveImage == 1 %}
+            <!--{% if domain.status != 5 or domain.hasManagedSaveImage == 1 %}
             <li><a href="#managedsave" data-toggle="tab">{% i18n "Save" %}</a></li>
-            {% endif %}
+	    {% endif %}-->
         </ul>
         <div class="tab-content">
             <div class="tab-pane tab-inst active" id="shutdown">
@@ -105,18 +137,18 @@
                 <p>{% i18n "This action sends an ACPI shutdown signal to the instance." %}</p>
                 {% endif %}
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 5 %}
                         <button type="submit" name="start"
-                                class="btn btn-lg btn-primary pull-right">{% i18n "Start" %}</button>
+                                class="btn btn-lg btn-primary pull-left">{% i18n "Start" %}</button>
                     {% endif %}
                     {% if domain.status == 1 %}
                         <button data-id="shutoff" type="submit" name="power" value="shutdown"
-                                class="btn btn-lg btn-primary pull-right"
+                                class="btn btn-lg btn-primary pull-left"
                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Shutdown" %}</button>
                     {% endif %}
                     {% if domain.status == 3 %}
-                        <button class="btn btn-lg btn-primary pull-right disabled">{% i18n "Shutdown" %}</button>
+                        <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Shutdown" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
@@ -125,14 +157,14 @@
             <div class="tab-pane tab-inst" id="forceshutdown">
                 <p>{% i18n "This action forcibly powers off the instance and may cause data corruption." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 1 %}
                         <button data-id="shutoff" type="submit" name="power" value="destroy"
-                                class="btn btn-lg btn-primary pull-right"
+                                class="btn btn-lg btn-primary pull-left"
                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Force Shutdown" %}</button>
                     {% endif %}
                     {% if domain.status == 3 %}
-                        <button class="btn btn-lg btn-primary pull-right disabled">{% i18n "Force Shutdown" %}</button>
+                        <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Force Shutdown" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
@@ -140,54 +172,54 @@
             <div class="tab-pane tab-inst" id="suspend">
                 <p>{% i18n "This action suspends or restores the instance." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 1 %}
                         <button data-id="shutoff" type="submit" name="suspend"
-                                class="btn btn-lg btn-primary pull-right"
+                                class="btn btn-lg btn-primary pull-left"
                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Suspend" %}</button>
                     {% endif %}
                     {% if domain.status == 3 %}
                         <button type="submit" name="resume"
-                                class="btn btn-lg btn-primary pull-right">{% i18n "Resume" %}</button>
+                                class="btn btn-lg btn-primary pull-left">{% i18n "Resume" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
             </div>
             {% endif %}
-            {% if status != 5 or domain.hasManagedSaveImage == 1 %}
+            <!--{% if status != 5 or domain.hasManagedSaveImage == 1 %}
             <div class="tab-pane tab-inst" id="managedsave">
                 <p>{% i18n "This action saves the state of the instance." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 5 %}
                         <button data-id="shutoff" type="submit" name="start"
-                                class="btn btn-lg btn-primary pull-right">{% i18n "Start" %}</button>
+                                class="btn btn-lg btn-primary pull-left">{% i18n "Start" %}</button>
                         {% if domain.hasManagedSaveImage == 1 %}
                             <div class="clearfix" style="height:60px;"></div>
                             <button type="submit" name="deletesaveimage"
-                                    class="btn btn-lg btn-primary pull-right">{% i18n "Delete Save Image" %}</button>
+                                    class="btn btn-lg btn-primary pull-left">{% i18n "Delete Save Image" %}</button>
                         {% endif %}
                     {% endif %}
                     {% if domain.status == 1 %}
                         <button type="submit" name="power" value="managedsave"
-                                class="btn btn-lg btn-primary pull-right"
+                                class="btn btn-lg btn-primary pull-left"
                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Save" %}</button>
                     {% endif %}
                     {% if domain.status == 3 %}
-                        <button class="btn btn-lg btn-primary pull-right disabled">{% i18n "Save" %}</button>
+                        <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Save" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
             </div>
-            {% endif %}
+	    {% endif %}-->
         </div>
     </div>
     <div class="tab-pane" id="access" style="margin-top: 20px">
-        <ul class="nav nav-tabs nav-btn-act">
-            <li class="active"><a href="#console" data-toggle="tab">{% i18n "Console" %}</a></li>
-            <li><a href="#console_type" data-toggle="tab">{% i18n "Console Type" %}</a></li>
-            <li><a href="#console_pass" data-toggle="tab">{% i18n "Console Password" %}</a></li>
-            <li><a href="#console_keymap" data-toggle="tab">{% i18n "Console Keymap" %}</a></li>
+        <ul class="nav nav-tabs">
+            <li class="active"><a id="tab_console" href="#console" data-toggle="tab">{% i18n "Console" %}</a></li>
+            <li><a id="tab_console_type" href="#console_type" data-toggle="tab">{% i18n "Console Type" %}</a></li>
+            <li><a id="tab_console_pass" href="#console_pass" data-toggle="tab">{% i18n "Console Password" %}</a></li>
+            <li><a id="tab_console_keymap" href="#console_keymap" data-toggle="tab">{% i18n "Console Keymap" %}</a></li>
             {% if telnet_port %}
                 <li><a href="#telnet_console" data-toggle="tab">{% i18n "Telnet Console" %}</a></li>
             {% endif %}
@@ -197,9 +229,9 @@
             <div class="tab-pane tab-inst active" id="console">
                 <p>{% i18n "This action opens a new window with a connection to the console of the instance." %}</p>
                 {% if domain.status == 5 %}
-                    <button class="btn btn-primary btn-lg pull-right disabled">{% i18n "Console" %}</button>
+                    <button class="btn btn-primary btn-lg pull-left disabled">{% i18n "Console" %}</button>
                 {% else %}
-                    <a href="#" class="btn btn-primary btn-lg pull-right" title="Console port: {{ console_port }}"
+                    <a href="#" class="btn btn-primary btn-lg pull-left" title="Console port: {{ console_port }}"
                        onclick="open_console()">{% i18n "Console" %}</a>
                 {% endif %}
                 <div class="clearfix"></div>
@@ -207,18 +239,18 @@
             <div class="tab-pane tab-inst" id="telnet_console">
                 <p>{% i18n "This action open new window with console Telnet connection to your instance." %}</p>
                 {% if domain.status == 5 %}
-                    <button class="btn btn-primary btn-lg pull-right disabled">{% i18n "Console" %}</button>
+                    <button class="btn btn-primary btn-lg pull-left disabled">{% i18n "Console" %}</button>
                 {% else %}
                     <a href="telnet://{{ compute.hostname }}:{{ telnet_port }}"
-                       class="btn btn-primary btn-lg pull-right"
+                       class="btn btn-primary btn-lg pull-left"
                        title="Telnet Port: {{ telnet_port }}">{% i18n "Console" %}</a>
                 {% endif %}
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_type">
-                <p>{% i18n "To set console's type, shutdown the instance." %}</p>
+                <p>{% i18n "To set the console's type, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group" id="console_type_selection">
                         <label for="console_select_type" class="col-sm-2 control-label">{% i18n "Type" %}</label>
 
@@ -232,19 +264,19 @@
                         </div>
                     </div>
                     {% if domain.status == 5 %}
-                        <button type="submit" class="btn btn-primary btn-lg pull-right"
+                        <button type="submit" class="btn btn-primary btn-lg pull-left"
                                 name="set_console_type">{% i18n "Set console type" %}</button>
                     {% else %}
-                        <button class="btn btn-primary btn-lg pull-right disabled"
+                        <button class="btn btn-primary btn-lg pull-left disabled"
                                 name="set_console_type">{% i18n "Set console type" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_pass">
-                <p>{% i18n "To create console password, shutdown the instance." %}</p>
+                <p>{% i18n "To create the console password, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
                             <div class="checkbox">
@@ -278,19 +310,19 @@
                         {% endif %}
                     </div>
                     {% if domain.status == 5 %}
-                        <button type="submit" class="btn btn-primary btn-lg pull-right"
+                        <button type="submit" class="btn btn-primary btn-lg pull-left"
                                 name="set_console_passwd">{% i18n "Set Password" %}</button>
                     {% else %}
-                        <button class="btn btn-primary btn-lg pull-right disabled"
+                        <button class="btn btn-primary btn-lg pull-left disabled"
                                 name="set_console_passwd">{% i18n "Set Password" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_keymap">
-                <p>{% i18n "To set console's keymap, shutdown the instance." %}</p>
+                <p>{% i18n "To set the console's keymap, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
                             <div class="checkbox">
@@ -314,10 +346,10 @@
                         </div>
                     </div>
                     {% if domain.status == 5 %}
-                        <button type="submit" class="btn btn-primary btn-lg pull-right"
+                        <button type="submit" class="btn btn-primary btn-lg pull-left"
                                 name="set_console_keymap">{% i18n "Set Keymap" %}</button>
                     {% else %}
-                        <button class="btn btn-primary btn-lg pull-right disabled"
+                        <button class="btn btn-primary btn-lg pull-left disabled"
                                 name="set_console_keymap">{% i18n "Set Keymap" %}</button>
                     {% endif %}
                 </form>
@@ -326,18 +358,18 @@
         </div>
     </div>
     <div class="tab-pane" id="settings" style="margin-top: 20px">
-    <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
-        <li class="active"><a href="#instancesettings" data-toggle="tab">{% i18n "VCPU's and Memory" %}</a></li>
-        <li><a href="#instancemedia" data-toggle="tab">{% i18n "Media" %}</a></li>
-        <li><a href="#instancedevice" data-toggle="tab">{% i18n "Disks and Networks" %}</a></li>
-        <li><a href="#instanceclone" data-toggle="tab">{% i18n "Clone" %}</a></li>
-        <li><a href="#instancexml" data-toggle="tab">{% i18n "XML" %}</a></li>
+    <ul class="nav nav-tabs" style="margin-top: 20px">
+        <li class="active"><a class="inst-btn" id="settings_instancesettings" href="#instancesettings" data-toggle="tab"><span class="fas fa-microchip"></span><span class="fas fa-memory"></span>{% i18n "CPU/Ram" %}</a></li>
+        <li><a class="inst-btn" id="settings_instancemedia" href="#instancemedia" data-toggle="tab"><span class="fas fa-compact-disc"></span><br>{% i18n "Media" %}</a></li>
+        <li><a class="inst-btn" id="settings_instancenetworks" href="#instancenetworks" data-toggle="tab"><span class="fas fa-network-wired"></span>{% i18n "Network" %}</a></li>
+        <li><a class="inst-btn" id="settings_instancedisks" href="#instancedisks" data-toggle="tab"><span class="fas fa-hdd"></span><br>{% i18n " Disks " %}</a></li>
+        <li><a class="inst-btn" id="settings_instanceclone" href="#instanceclone" data-toggle="tab"><span class="fas fa-clone"></span><br>{% i18n " Clone " %}</a>
     </ul>
     <div class="tab-content">
     <div class="tab-pane tab-inst active" id="instancesettings">
-        <p style="font-weight:bold;">{% i18n "Description and Autostart" %}</p>
+        <p style="font-weight:bold;">{% i18n "Boot Settings" %}</p>
 
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-4 control-label" style="font-weight:normal;"> {% i18n "Autostart" %}</label>
 
@@ -352,7 +384,22 @@
                 </div>
             </div>
         </form>
-        <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
+            <div class="form-group">
+                <label class="col-sm-4 control-label" style="font-weight:normal;"> {% i18n "UEFI boot" %}</label>
+
+                <div class="col-sm-4">
+                    {% if not domain.useUEFI %}
+                        <input type="submit" class="btn btn-md btn-default" name="set_uefi"
+                               value="{% i18n "Enable" %}">
+                    {% else %}
+                        <input type="submit" class="btn btn-md btn-default" name="unset_uefi"
+                               value="{% i18n "Disable" %}">
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+        <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-4 control-label" style="font-weight:normal;">{% i18n "Description" %}</label>
 
@@ -367,7 +414,7 @@
                        style="font-weight:normal;"> {% i18n "Current allocation" %}</label>
 
                 <div class="col-sm-4">
-                    <select name="cur_vcpu" class="form-control">
+                    <select id="cur_vcpu" name="cur_vcpu" class="form-control">
                         {% for cpu in vcpu_range %}
                             {% if domain.currentVcpu %}
                                 <option value="{{ cpu }}" {% if cpu == domain.currentVcpu %}selected{% endif %}>{{ cpu }}</option>
@@ -383,7 +430,7 @@
                        style="font-weight:normal;">{% i18n "Maximum allocation" %}</label>
 
                 <div class="col-sm-4">
-                    <select name="vcpu" class="form-control">
+                    <select id="vcpu"  name="vcpu" class="form-control">
                         {% for cpu in vcpu_range %}
                             <option value="{{ cpu }}" {% if cpu == domain.vcpu %}selected{% endif %}>{{ cpu }}</option>
                         {% endfor %}
@@ -397,7 +444,7 @@
                        style="font-weight:normal;">{% i18n "Current allocation" %} ({% i18n "MiB" %})</label>
 
                 <div class="col-sm-4 js-custom__container">
-                    <select name="cur_memory" class="form-control js-custom__toggle">
+                    <select id="cur_memory" name="cur_memory" class="form-control js-custom__toggle">
                         {% for mem in memory_range %}
                             <option value="{{ mem }}"
                                     {% if mem == domain.currentMemoryMiB %}selected{% endif %}>{{ mem }}</option>
@@ -412,7 +459,7 @@
                        style="font-weight:normal;">{% i18n "Maximum allocation" %} ({% i18n "MiB" %})</label>
 
                 <div class="col-sm-4 js-custom__container">
-                    <select name="memory" class="form-control js-custom__toggle">
+                    <select id="memory" name="memory" class="form-control js-custom__toggle">
                         {% for mem in memory_range %}
                             <option value="{{ mem }}"
                                     {% if mem == domain.memoryMiB %}selected{% endif %}>{{ mem }}</option>
@@ -423,33 +470,41 @@
                 </div>
             </div>
             {% if domain.status == 5 %}
-                <button type="submit" class="btn btn-lg btn-primary pull-right"
+                <button type="submit" class="btn btn-lg btn-primary pull-left"
                         name="change_settings">{% i18n "Change" %}</button>
             {% else %}
-                <button class="btn btn-lg btn-primary pull-right disabled">{% i18n "Change" %}</button>
+                <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Change" %}</button>
             {% endif %}
         </form>
         <div class="clearfix"></div>
     </div>
     <div class="tab-pane tab-inst" id="instancemedia">
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             {% for cd in domain.media %}
+	   {% if forloop.counter0  == 0 %}  
+	          <div class="col-sm-3" style="text-align:right;font-weight:bold">{% i18n "Device" %}</div> 
+	          <div class="col-sm-4" style="text-align:left;font-weight:bold">{% i18n "Media" %}</div> 
+	          <div class="col-sm-2" style="text-align:left;font-weight:bold">{% i18n "Boot from" %}</div><br> 
+		  {% endif %}
                 <div class="form-group">
                     <label class="col-sm-3 control-label">{% i18n "CDROM" %} {{ forloop.counter }}</label>
                     {% if not cd.image %}
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <select name="media" class="form-control">
                                 {% if host.isoMedia.size %}
                                     {% for iso in host.isoMedia %}
-                                        <option value="{{ iso }}">{{ iso }}</option>
+                                        <option value="{{ iso.path }}">{{ iso.name }}</option>
                                     {% endfor %}
                                 {% else %}
                                     <option value="none">{% i18n "None" %}</option>
                                 {% endif %}
                             </select>
                         </div>
+			<div class="col-sm-2">
+			   <input type="checkbox"  name="{{ cd.dev }}" id="boot_from_{{ forloop.counter }}" {% if cd.bootorder != '' %} checked {% else %} unchecked {% endif %} >
+                        </div>
                         <div class="col-sm-2">
-                            {% if host.isoMedia.size %}
+                            {% if host.isoMedia.size and  domain.status == 5 %}
                                 <button type="submit" class="btn btn-primary btn-sm pull-left" value="{{ cd.dev }}"
                                         name="mount_iso">{% i18n "Connect" %}</button>
                             {% else %}
@@ -458,13 +513,16 @@
                             {% endif %}
                         </div>
                     {% else %}
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <p>{{ cd.image }}</p>
+                        </div>
+			<div class="col-sm-2">
+			   <input type="checkbox"   name="{{ cd.dev }}" id="boot_from_{{ forloop.counter }}" {% if cd.bootorder != '' %} checked {% else %} unchecked {% endif %} >
                         </div>
                         <div class="col-sm-2">
                             <input type="hidden" name="path" value="{{ cd.path }}">
                             <button type="submit" class="btn btn-primary btn-sm pull-left" value="{{ cd.dev }}"
-                                    name="umount_iso">{% i18n "Disconnect" %}</button>
+                                    name="umount_iso" {% if domain.status != 5 %}  disabled {% endif %}  >{% i18n "Disconnect" %}</button>
                         </div>
                     {% endif %}
                 </div>
@@ -472,117 +530,149 @@
         </form>
         <div class="clearfix"></div>
     </div>
-    <div class="tab-pane tab-inst" id="instancedevice">
-        <p style="font-weight:bold;">{% i18n "Network devices" %}</p>
-
+    <div class="tab-pane tab-inst" id="instancenetworks">
+     {% if domain.status == 5 %}
+        <a data-toggle="modal" href="#addNic" class="btn btn-primary pull-left">{% i18n "Add Network" %}</a>
+     {% endif %}
+     <hr>
+    <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
+                  <div class="col-sm-1" style="text-align:right;font-weight:bold">{% i18n "Device" %}</div>
+                  <div class="col-sm-3" style="text-align:left;font-weight:bold">{% i18n "Network" %}</div>
+                  <div class="col-sm-3" style="text-align:left;font-weight:bold">{% i18n "Mac" %}</div>
+                  <div class="col-sm-3" style="text-align:left;font-weight:bold">{% i18n "Type" %}</div><br><br>
+      <!-- p style="font-weight:bold;Font-size:14pt">{% i18n "Network devices" %}</p -->
+        <div class="col-sm-1">
+            {% for network in domain.networks %}
+                <p style="text-align: left;">eth{{ forloop.counter0 }}</p>
+            {% endfor %}
+        </div>
         <div class="col-sm-3">
             {% for network in domain.networks %}
-                <p style="text-align: right;">eth{{ forloop.counter0 }} ({{ network.nic }})</p>
+               <select name="network_source" class="form-control">
+                    {% for net in networks %}
+                        <option value="{{ net.name }}" {% if  net.name  == network.nic %}selected{% endif %}>{{ net.name }} </option>
+                    {% endfor %}
+              </select>
             {% endfor %}
         </div>
-        <div class="col-sm-9">
-            {% for network in domain.networks %}
-                {% if network.ip %}
-                    <p>{{ network.ip }}</p>
-                {% else %}
-                    <p>{{ network.mac }}</p>
-                {% endif %}
-            {% endfor %}
-        </div>
-        <p style="font-weight:bold;">{% i18n "Storage devices" %}</p>
-
         <div class="col-sm-3">
-            {% for disk in domain.disks %}
-                <p style="text-align: right;">{{ disk.dev }} ({{ disk.storage }})</p>
+            {% for network in domain.networks %}
+		    <input type="text" class="form-control" name="network_mac" value="{{ network.mac }}" readonly style="border: none; background-color: transparent;"/>
             {% endfor %}
         </div>
-        <div class="col-sm-9">
-            {% for disk in domain.disks %}
-                <p>{{ disk.image }} ({{ disk.format }})</p>
-            {% endfor %}
+         {% for network in domain.networks %}
+            <div class="col-sm-3">
+                <select name="network_type" class="form-control">
+                   <option value="virtio" {% if network.type == "virtio"  %}selected{% endif %}>virtio</option>
+                   <option value="e1000" {% if network.type == "e1000"  %}selected{% endif %}>e1000</option>
+                   <option value="rtl8139" {% if network.type == "rtl8139"  %}selected{% endif %}>rtl8139</option>
+                </select>   	    
+             </div>	
+             <div class="col-sm-2">
+             <button name="remove-nic-{{ forloop.counter0 }}" type="button" class="btn btn-default btn-sm removePane" 
+                        onclick="callback_remove_nic('{{ network.mac }}')"
+                                           {% i18n "Remove_nic" %} {% if domain.status != 5 %} disabled  {% endif %}>
+                                  <span class="fas fa-minus"></span>
+              </button>
+	     </div>  
+          {% endfor %}
+        <div class="clearfix"></div>
+        {% if domain.status == 5 %}
+             <button type="submit" class="btn btn-lg btn-primary pull-left"
+                    name="change_net">{% i18n "Change" %}</button>
+        {% else %}
+             <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Change" %}</button>
+        {% endif %}
+     </form>
+    </div>
+    <div class="tab-pane tab-inst" id="instancedisks">
+     {% if domain.status == 5 %} 
+       <a data-toggle="modal" href="#addDisk" class="btn btn-primary pull-left">{% i18n "Add Disk" %}</a>
+     {% endif %}  
+     <hr>
+    <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
+        <p style="font-weight:bold;Font-size:14pt">{% i18n "Storage devices" %}</p>
+        <div class="col-sm-1" style="text-align:right;font-weight:bold">{% i18n "Device" %}</div>
+        <div class="col-sm-4" style="text-align:left;font-weight:bold">{% i18n "File" %}</div>
+        <div class="col-sm-1" style="text-align:left;font-weight:bold">{% i18n "Type" %}</div>
+	<div class="col-sm-2" style="text-align:left;font-weight:bold">{% i18n "Boot from" %}</div>
+        <div class="col-sm-2" style="text-align:left;font-weight:bold">{% i18n "Bus" %}</div><br><br>
+        {% for disk in domain.disks %}
+        <div class="col-sm-1">
+		<input type="text" class="form-control" name="disk_dev" value="{{  disk.dev }}" readonly style="border: none; background-color: transparent;"/>
+        </div>
+        <div class="col-sm-4">
+               <select name="disk_source" class="form-control">
+	            <option selected="selected">{{ disk.path }} </option>
+                    {% for img in get_images %}
+			 <option value="{{ img.path }}">{{ img.path }} </option>
+                    {% endfor %}
+              </select>
+        </div>
+        <div class="col-sm-1">
+                <p>{{ disk.format }}</p>
+        </div>
+        <div class="col-sm-2">
+           <input type="checkbox"   name="boot_from_{{ disk.dev }}" id="boot_from_{{ disk.dev }}" {% if disk.bootorder != '' %} checked {% else %} unchecked {% endif %} >
+        </div>
+            <div class="col-sm-2">
+	        <select name="disk_bus" class="form-control">
+   		   <option value="virtio" {% if disk.bus == "virtio"  %}selected{% endif %}>virtio</option>
+   		   <option value="sata" {% if disk.bus == "sata"  %}selected{% endif %}>sata</option>
+   		   <option value="scsi" {% if disk.bus == "scsi"  %}selected{% endif %}>scsi</option>
+		</select>   
+           </div>
+        <div class="col-sm-1">
+	      <button name="remove-disk-{{ forloop.counter0 }}" type="button" class="btn btn-default btn-sm removePane" 
+	                onclick="callback_remove_disk('{{ disk.dev }}')"
+			                   {% i18n "Remove_disk" %} {% if domain.status != 5 %} disabled  {% endif %}>
+				  <span class="fas fa-minus"></span>
+    	      </button>
         </div>
         <div class="clearfix"></div>
+        {% endfor %}
+        
+        {% if domain.status == 5 %}
+             <button type="submit" class="btn btn-lg btn-primary pull-left"
+                    name="change_disk">{% i18n "Change" %}</button>
+        {% else %}
+             <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Change" %}</button>
+        {% endif %}
+     </form>
     </div>
     <div class="tab-pane tab-inst" id="instanceclone">
         <p style="font-weight:bold;">{% i18n "Create a clone" %}</p>
 
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-3 control-label" style="font-weight:normal;">{% i18n "Clone Name" %}</label>
 
                 <div class="col-sm-3">
-                    <input type="text" class="form-control" name="name" value="{{ domain.name }}-clone"/>
+                    <input class="form-control" type="hidden"  name="old-name" value="{{ domain.name }}"/>
+                    <input type="text" class="form-control" name="clone-name" value="{{ domain.name }}-clone"/>
                 </div>
             </div>
-            <p style="font-weight:bold;">{% i18n "Network devices" %}</p>
-            {% for network in domain.networks %}
-                <div class="form-group">
-                    <label class="col-sm-3 control-label" style="font-weight:normal;">eth{{ forloop.counter0 }} ({{ network.nic }})</label>
-
-                    <div class="col-sm-3">
-                        <input type="text" class="form-control" name="net-{{ forloop.counter0 }}" value="{{ network.mac }}"/>
-                    </div>
-                    <div class="col-sm-1">
-                        <button type="button" class="btn btn-primary btn-sm pull-left" name="random-mac-{{ forloop.counter0 }}"
-                                onclick="random_mac({{ forloop.counter0 }})">{% i18n "Random MAC address" %}</button>
-                    </div>
-                </div>
-            {% endfor %}
-            <p style="font-weight:bold;">{% i18n "Storage devices" %}</p>
-            {% for disk in domain.cloneDisks %}
-                <div class="form-group">
-                    <label class="col-sm-3 control-label" style="font-weight:normal;">{{ disk.dev }} ({{ disk.storage }})</label>
-
-                    <div class="col-sm-3">
-                        <input type="text" class="form-control" name="disk-{{ disk.dev }}" value="{{ disk.image }}"/>
-                    </div>
-                    {% if disk.format == 'qcow2' %}
-                        <label class="col-sm-2 control-label" style="font-weight:normal;">Metadata</label>
-                        <div class="col-sm-1">
-                            <input type="checkbox" name="meta-{{ disk.dev }}" value="true">
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            {% if domain.status == 5 %}
-                <button type="submit" class="btn btn-primary btn-lg pull-right"
-                        name="clone">{% i18n "Clone" %}</button>
+           {% if domain.status == 5 %}
+                <button type="submit" class="btn btn-primary btn-lg pull-left"
+                        name="clone_instance">{% i18n "Clone" %}</button>
             {% else %}
-                <button class="btn btn-primary btn-lg pull-right disabled" name="clone">{% i18n "Clone" %}</button>
+                <button class="btn btn-primary btn-lg pull-left disabled" name="clone_instance">{% i18n "Clone" %}</button>
             {% endif %}
-        </form>
-        <div class="clearfix"></div>
-    </div>
-    <div class="tab-pane tab-inst" id="instancexml">
-        <div id="viewXMLpre">
-            <pre class="pre-scrollable">{{ domain.xml }}</pre>
-            {% if domain.status == 5 %}
-                <button type="button" class="btn btn-lg btn-primary pull-right"
-                        onclick="javascript:$('#viewXMLpre').hide();$('#viewXMLform').show();">{% i18n "Edit" %}</button>
-            {% else %}
-                <button type="button" class="btn btn-lg btn-primary pull-right disabled">{% i18n "Edit" %}</button>
-            {% endif %}
-        </div>
-        <form id="viewXMLform" class="form-horizontal" method="post" role="form" style="display: none">{{ csrf_token }}
-            <textarea id="xmltextarea" name="inst_xml">{{ domain.xml }}</textarea>
-            <button type="button" class="btn btn-lg btn-default"
-                    onclick="javascript:$('#viewXMLpre').show();$('#viewXMLform').hide();">{% i18n "Close" %}</button>
-            <button type="submit" class="btn btn-lg btn-danger pull-right" name="change_xml">{% i18n "Save" %}</button>
         </form>
         <div class="clearfix"></div>
     </div>
     </div>
     </div>
     <div class="tab-pane" id="snapshots">
-        <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
-            <li class="active"><a href="#createsnapshot" data-toggle="tab">{% i18n "Create Snapshot" %}</a></li>
-            <li><a href="#istaceshapshosts" data-toggle="tab">{% i18n "Restore from Snapshot" %}</a></li>
+        <ul class="nav nav-tabs" style="margin-top: 20px">
+            <li class="active"><a href="#createsnapshot" id="snapshots_create" data-toggle="tab">{% i18n "Create Snapshot" %}</a></li>
+            <li><a href="#instaceshapshosts" id="snapshots_restore"  data-toggle="tab">{% i18n "Restore from Snapshot" %}</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane tab-inst active" id="createsnapshot">
                 <p>{% i18n "To take a snapshot, shutdown the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label for="snapshot" class="col-sm-2 control-label">{% i18n "Name" %}</label>
 
@@ -591,16 +681,16 @@
                                    maxlength="14">
                         </div>
                     </div>
-                    {% if domain.status == 5 %}
-                        <button type="submit" class="btn btn-primary btn-lg pull-right"
+                    {% if domain.status == 5 and domain.can_take_snapshots %}
+                        <button type="submit" class="btn btn-primary btn-lg pull-left"
                                 name="snapshot">{% i18n "Create Snapshot" %}</button>
                     {% else %}
-                        <button class="btn btn-primary btn-lg pull-right disabled">{% i18n "Create Snapshot" %}</button>
+                        <button class="btn btn-primary btn-lg pull-left disabled">{% i18n "Create Snapshot" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
             </div>
-            <div class="tab-pane tab-inst" id="istaceshapshosts">
+            <div class="tab-pane tab-inst" id="instaceshapshosts">
                 <p>{% i18n "To revert to a snapshot, shutdown the instance" %}</p>
                 {% if domain.snapshots.size %}
                     <table class="table table-bordered">
@@ -617,7 +707,7 @@
                                 <td><strong>{{ snap.name }}</strong></td>
                                 <td>{{ snap.date }}<!--|date:"M d H:i:s"--></td>
                                 <td style="width:30px;">
-                                    <form action="" method="post" style="height:10px" role="form">{{ csrf_token }}
+                                    <form action="" method="post" style="height:10px" role="form">{% c_csrf_token %}
                                         <input type="hidden" name="name" value="{{ snap.name }}">
                                         {% if domain.status == 5 %}
                                             <button type="submit" class="btn btn-sm btn-primary" name="revert_snapshot"
@@ -629,7 +719,7 @@
                                     </form>
                                 </td>
                                 <td style="width:30px;">
-                                    <form action="" method="post" role="form">{{ csrf_token }}
+                                    <form action="" method="post" role="form">{% c_csrf_token %}
                                         <input type="hidden" name="name" value="{{ snap.name }}">
                                         <button type="submit" class="btn btn-sm btn-danger" name="delete_snapshot"
                                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Delete" %}</button>
@@ -646,41 +736,22 @@
         </div>
     </div>
     <div class="tab-pane" id="graph">
-        <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
+        <ul class="nav nav-tabs" style="margin-top: 20px">
             <li class="active"><a href="#statistics" data-toggle="tab">{% i18n "Instance Statistics" %}</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane tab-inst active" id="statistics">
-                <div id="cpu-usage">
-                    <p style="margin-left: 25px">{% i18n "CPU usage" %}</p>
-                    <canvas style="margin-left: 25px" id="cpuChart" width="600" height="125"></canvas>
+                <div id="chart-cpu-usage">
                 </div>
-                <div id="net-usage">
-                    {% for network in domain.networks %}
-                        <p style="margin-left: 25px">{% i18n "Bandwidth" %} - Eth{{ forloop.counter0 }}</p>
-                        <canvas style="margin-left: 25px" id="netEth{{ forloop.counter0 }}Chart" width="600"
-                                height="125"></canvas>
-                        <div id="lineLegend">
-                            <span class="netIN">{% i18n "In" %}</span>
-                            <span class="netOUT">{% i18n "Out" %}</span>
-                        </div>
-                    {% endfor %}
+                <div id="chart-disk-usage">
                 </div>
-                <div id="disk-usage">
-                    {% for disk in domain.disks %}
-                        <p style="margin-left: 25px">{% i18n "Disk I/O" %} - {{ disk.dev }}</p>
-                        <canvas style="margin-left: 25px" id="blk{{ disk.dev }}Chart" width="600" height="125"></canvas>
-                        <div id="lineLegend">
-                            <span class="diskRD">{% i18n "Read" %}</span>
-                            <span class="diskWR">{% i18n "Write" %}</span>
-                        </div>
-                    {% endfor %}
+                <div id="chart-net-usage">
                 </div>
             </div>
         </div>
     </div>
     <div class="tab-pane" id="migrate">
-        <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
+        <ul class="nav nav-tabs" style="margin-top: 20px">
             <li class="active"><a href="#instancemigate" data-toggle="tab">{% i18n "Instance Migrate" %}</a></li>
         </ul>
         <div class="tab-content">
@@ -698,7 +769,7 @@
                         <p style="margin: 10px -10px 0 0;">{{ compute.name }}</p>
                     </div>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Host migration" %}</label>
 
@@ -736,10 +807,10 @@
                         </div>
                     </div>
                     {% if computes_count != 1 %}
-                        <button type="submit" class="btn btn-lg btn-primary pull-right"
+                        <button type="submit" class="btn btn-lg btn-primary pull-left"
                                 name="migrate">{% i18n "Migrate" %}</button>
                     {% else %}
-                        <button class="btn btn-lg btn-primary pull-right disabled">{% i18n "Migrate" %}</button>
+                        <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Migrate" %}</button>
                     {% endif %}
                 </form>
                 <div class="clearfix"></div>
@@ -747,24 +818,25 @@
         </div>
     </div>
     <div class="tab-pane" id="delete">
-        <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
-            <li class="active"><a href="#destroy" data-toggle="tab">{% i18n "Delete Instance" %}</a></li>
+        <ul class="nav nav-tabs" style="margin-top: 20px">
+            <li class="active"><a id="tab_destroy" href="#destroy" data-toggle="tab">{% i18n "Delete Instance" %}</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane tab-inst active" id="destroy">
                 <p>{% i18n "Delete HDD image?" %}</p>
 
-                <form class="form-group" method="post" role="form">{{ csrf_token }}
+                <form class="form-group" method="post" role="form">{% c_csrf_token %}
                     <div class="checkbox" style="margin-left: 8px;">
                         <label>
-                            <input type="checkbox" name="delete_disk" value="true">
+                            <input type="checkbox" id="delete_disk" unchecked>
                             <strong><span
                                     class="label label-danger">{% i18n "Warning:" %}</span> {% i18n "If you check this box, Instance's data will be lost!" %}
                             </strong>
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-lg btn-primary pull-right"
-                            name="delete">{% i18n "Delete" %}</button>
+                    <button id="btn_delete" type="button" class="btn btn-lg btn-danger pull-left"
+                            name="delete" onclick="callback_delete_instance('{{ domain.name }}')">{% i18n "Delete" %} 
+			      </button>
                 </form>
                 <div class="clearfix"></div>
             </div>
@@ -772,6 +844,92 @@
     </div>
     </div>
     </div>
+
+ <!-- Modal Disk -->
+    <div class="modal fade" id="addDisk" tabindex="-1" role="dialog" aria-labelledby="addDiskLabel" aria-hidden="true">
+     <div class="modal-dialog">
+       <div class="modal-content">
+          <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">{% i18n "Add New Disk" %}</h4>
+                </div>
+		<form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
+                      <div class="form-group">
+                         <label class="col-sm-3 control-label">{% i18n "Files" %}</label>
+
+		        <div class="col-sm-6">
+			    <input id="images" name="images" type="hidden" value=""/>
+		               <select name="disk_source_add" class="form-control">
+		                    {% for img in get_images %}
+		                         <option value="{{ img.path }}">{{ img.path }} </option>
+		                    {% endfor %}
+				</select>    
+		        </div>
+	              </div>	   
+
+		      <div class="form-group">
+                  	     <label class="col-sm-3 control-label">{% i18n "Bus type" %}</label>
+                  	     <div class="col-sm-6">
+          		      <select  class="form-control" name="new_target_bus" >
+          		        <option value="virtio" selected="selected">virtio</option>
+          		        <option value="sata">sata</option>
+          		        <option value="scsi">scsi</option>
+          		      </select>
+                            </div>
+                       </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{% i18n "Close" %}</button>
+                        <button type="submit" class="btn btn-primary" name="insert_disk">{% i18n "Add" %}</button>
+                    </div>
+		</form>
+       </div>
+     </div>
+    </div>  
+
+
+    <div class="modal fade" id="addNic" tabindex="-1" role="dialog" aria-labelledby="addNicLabel" aria-hidden="true">
+     <div class="modal-dialog">
+       <div class="modal-content">
+          <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">{% i18n "Add Network Card" %}</h4>
+                </div>
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
+                      <div class="form-group">
+                         <label class="col-sm-3 control-label">{% i18n "Network"%}</label>
+
+                        <div class="col-sm-6">
+                               <select name="new_network" class="form-control">
+		                    {% for net in networks %}
+		                        <option value="{{ net.name }}">{{ net.name }}</option>
+		                    {% endfor %}
+                                </select>
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                             <label class="col-sm-3 control-label">{% i18n "Model Type"%}</label>
+                             <div class="col-sm-6">
+                              <select  class="form-control" name="new_target_bus" >
+                                <option value="virtio" selected="selected">virtio</option>
+                                <option value="e1000">e1000</option>
+                                <option value="rtl8139">rtl8139</option>
+                              </select>
+                            </div>
+                       </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{% i18n "Close" %}</button>
+                        <button type="submit" class="btn btn-primary" name="insert_nic">{% i18n "Add" %}</button>
+                    </div>
+                </form>
+       </div>
+     </div>
+    </div>
+
+
+
     {% include 'sidebar_close.html' %}
 {% endblock %}
 {% block script %}
@@ -797,7 +955,6 @@
         $('input[name="net-'+net+'"]').val(macAddress);
     };
 </script>
-<script src="/static/js/Chart.min.js"></script>
 <script>
     var hash = location.hash;
     if (~$.inArray(hash, ['#shutdown', '#forceshutdown', '#managedsave', '#suspend'])) {
@@ -822,7 +979,7 @@
             }
         });
     }
-    if (~$.inArray(hash, ['#createsnapshot', '#istaceshapshosts'])) {
+    if (~$.inArray(hash, ['#createsnapshot', '#instaceshapshosts'])) {
         var btnsect = $('#btnsection>li>a');
         $(btnsect).each(function () {
             if ($(this).attr('href') === '#snapshots') {
@@ -836,7 +993,7 @@
             }
         });
     }
-    if (~$.inArray(hash, ['#instancesettings', '#instancemedia', '#instancexml'])) {
+    if (~$.inArray(hash, ['#instancesettings', '#instancemedia'])) {
         var btnsect = $('#btnsection>li>a');
         $(btnsect).each(function () {
             if ($(this).attr('href') === '#settings') {
@@ -889,60 +1046,46 @@
             $("#console_select_type option[value='" + console_type + "']").prop('selected', true);
         }
     });
+
+
+
+
+$(document).ready(function () {
+    $('a[data-toggle="tab"]').on('show.bs.tab', function(e) {
+        var m=$(e.target).attr('id');
+        if (typeof m == 'undefined') return;
+	m=m.split("_");
+       if (m[0] == 'tab' )
+	     localStorage.setItem('activeTabM',m[1]);
+	else
+	     localStorage.setItem('activeTabD', $(e.target).attr('href'));
+
+    });
+    var activeTabM = localStorage.getItem('activeTabM');
+    var activeTabD = localStorage.getItem('activeTabD');
+    if(activeTabM)
+        $('#btnsection a[href="#' + activeTabM + '"]').tab('show');
+    if(activeTabD)
+        $('#' + activeTabM +' a[href="' + activeTabD + '"]').tab('show');
+});
+
+
 </script>
 <script>
-    var cpu_ctx = $("#cpuChart").get(0).getContext("2d");
-    var cpuChart = new Chart(cpu_ctx);
-    var cpu_options = { animation: false,
-        pointDotRadius: 2,
-        scaleLabel: "<%=value%> %",
-        scaleOverride: true,
-        scaleSteps: 5,
-        scaleStepWidth: 20,
-        scaleStartValue: 0,
-        responsive: true
-    };
-
-    var diskChart = {};
-    {% for disk in domain.disks %}
-        var disk_ctx_{{ disk.dev }} = $("#blk{{ disk.dev }}Chart").get(0).getContext("2d");
-        diskChart['{{ disk.dev }}'] = new Chart(disk_ctx_{{ disk.dev }});
-    {% endfor %}
-    var disk_options = {
-        animation: false,
-        pointDotRadius: 2,
-        scaleLabel: "<%=value%> Mb/s",
-        responsive: true
-    };
-
-    var netChart = {};
-    {% for net in domain.networks %}
-        var net_ctx_{{ forloop.counter0 }} = $("#netEth{{ forloop.counter0 }}Chart").get(0).getContext("2d");
-        netChart['{{ forloop.counter0 }}'] = new Chart(net_ctx_{{ forloop.counter0 }});
-    {% endfor %}
-    var net_options = {
-        animation: false,
-        pointDotRadius: 2,
-        scaleLabel: "<%=value%> Mbps",
-        responsive: true
-    };
-
-    function instusage() {
-        $.getJSON('/info/instusage/{{ host_id }}/{{ domain.name }}', function (data) {
-            cpuChart.Line(data['cpu'], cpu_options);
-            for (var i = 0; i < data['hdd'].length; i++) {
-                diskChart[data['hdd'][i].dev].Line(data['hdd'][i].data, disk_options);
-            }
-            for (var i = 0; i < data['net'].length; i++) {
-                netChart[[i]].Line(data['net'][i].data, net_options);
-            }
-        });
-    }
     $(function () {
-        window.setInterval('instusage()', {{ time_refresh }});
+        // window.setInterval('instusage()', {{ time_refresh }});
+	if (is_function("ShowAlert")){
+              ShowAlert();
+	  }    
+	if (is_function("ShowMessage")){
+	      ShowMessage();
+	  }    
     });
 </script>
 <script>
+     function is_function(func) {
+        return typeof window[func] !== 'undefined' && $.isFunction(window[func]);
+     }
     $(function () {
         $('.js-custom__checkbox').change(function () {
             var container  = $(this).closest('.js-custom__container');
@@ -951,14 +1094,318 @@
         });
     });
 </script>
+
+
+// <script>
+//      window.setInterval(function get_status() {
+//          var status = {{ domain.status }};
+//          $.getJSON('/info/inst_status/{{ host_id}}/{{ domain.name }}', function (data) {
+//              if (data['status'] != status) {
+//                  window.location.reload()
+//              }
+//          })
+//      }, {{ time_refresh }});
+// </script>
 <script>
-     window.setInterval(function get_status() {
-         var status = {{ domain.status }};
-         $.getJSON('/info/inst_status/{{ host_id}}/{{ domain.name }}', function (data) {
-             if (data['status'] != status) {
-                 window.location.reload()
-             }
-         })
-     }, 2000);
+
+function callback_delete_instance(inst,check) {
+       var vm2remove=inst;
+
+       return eModal
+                .confirm('Are you sure to want to delete the instance: ' + inst + '?','Attention')
+                .then(
+                    function () { 
+                            var form = document.createElement("form");
+                            var element1 = document.createElement("input");
+                            var element2 = document.createElement("checkbox");
+                            var csrf = document.createElement("input");
+                            csrf.type="hidden";
+                            csrf.value="{{ csrf_token }}";
+                            csrf.name="csrfprotectiontoken";
+                            form.method = "POST";
+
+                            element1.value=inst;
+                            element1.name="delete";
+                            element2= document.getElementById('delete_disk');
+                            element2.name="delete_disk";
+                            form.appendChild(element1);
+                            form.appendChild(element2);
+                            form.appendChild(csrf);
+
+
+                            document.body.appendChild(form);
+
+                            form.submit();
+
+                             }
+                    );
+
+  }
+
+
+function callback_remove_disk(disk) {
+       var disk2remove=disk;
+       return eModal
+                .confirm('Are you sure to remove the ' + disk + ' Hard Disk?','Attention')
+                .then(
+                    function () { 
+			    var form = document.createElement("form");
+			    var element1 = document.createElement("input");
+			    var csrf = document.createElement("input");
+                            csrf.type="hidden";
+                            csrf.value="{{ csrf_token }}";
+                            csrf.name="csrfprotectiontoken";
+		            form.method = "POST";
+
+			    element1.value=disk2remove;
+			    element1.name="remove_disk";
+			    form.appendChild(element1);
+			    form.appendChild(csrf);
+
+
+			    document.body.appendChild(form);
+
+			    form.submit();
+
+			     }
+                    );
+
+  }
+
+function callback_remove_nic(mac) {
+       var nic2remove=mac;
+       return eModal
+                .confirm('Are you sure to remove the network card with the mac:' + mac + '?','Attention')
+                .then(
+                    function () { 
+			    var form = document.createElement("form");
+			    var element1 = document.createElement("input");
+                            var csrf = document.createElement("input");
+                            csrf.type="hidden";
+                            csrf.value="{{ csrf_token }}";
+                            csrf.name="csrfprotectiontoken";
+                            form.method = "POST";
+
+			    element1.value=nic2remove;
+			    element1.name="remove_nic";
+			    form.appendChild(element1);
+			    form.appendChild(csrf);
+
+
+			    document.body.appendChild(form);
+
+			    form.submit();
+
+			     }
+                    );
+
+  }
 </script>
+<script type="text/javascript">
+
+//window.addEventListener("beforeunload", function (e) {
+//    insts_status_source.close();
+//});
+
+
+//var insts_status_source = new EventSource('/info/events/{{ host_id }}/2');
+
+//insts_status_source.onmessage = function (event) {
+event_source.addEventListener("all_vm_status", function(event) {
+             var data=JSON.parse(event.data);
+
+                for (var i = 0; i < data.length; i++) 
+                    if( ( data[i]['name'] === '{{ domain.name }}') && (data['status'] != status))
+                              window.location.reload();
+               
+});        
+
+
+//var s_insts_status_source = new EventSource('/info/events/{{ host_id }}/3/{{ domain.name }}');
+//var status = {{ domain.status }};
+//
+//
+//
+//
+//
+//window.addEventListener("beforeunload", function (e) {
+//    s_insts_status_source.close();
+//});
+//
+//
+//s_insts_status_source.addEventListener("single_vm_status", function(event) {
+//             var data=JSON.parse(event.data);
+//             if (data['status'] != status) {
+//                   window.location.reload()
+//              } 
+//});	     
+//
+
+  google.charts.setOnLoadCallback(drawChart); 
+
+    var selectedTabHash;
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    // here is the new selected tab id
+    selectedTabHash = e.target.hash;
+});
+
+  function drawChart() {
+       
+        var line_options_cpu = {
+                                  curveType: 'function',
+				  title: 'CPU Usage %',
+				  legend:'bottom',
+				  height: 250,
+                                  vAxis: {
+                                        viewWindow: {
+                                           min: 0,
+                                           max: 100
+                                          }
+                                  },
+                                  hAxis: { 
+                                    format:'HH:mm:ss',
+                                    gridlines: {count: 7}
+                                    }
+                                };
+
+        var line_options_disks = {
+                                  curveType: 'function',
+				  title: 'Disk Usage',
+				  height: 250,
+				  legend:'bottom',
+				  vAxis: {
+				        title: 'Disk IO(Mib/s',
+				        viewWindow: { 
+					    min: 0
+					  }    
+					}, 
+                                  hAxis: { 
+                                    format:'HH:mm:ss',
+                                    gridlines: {count: 7}
+                                    }
+                                };
+
+        var line_options_net = {
+                                  curveType: 'function',
+				  title: 'Network Usage',
+				  height: 250,
+				  legend:'bottom',
+				  vAxis: {
+				        title: 'Bandwidth(Mib/s',
+				        viewWindow: { 
+					    min: 0
+					  }    
+					}, 
+                                  hAxis: { 
+                                    format:'HH:mm:ss',
+                                    gridlines: {count: 7}
+                                    }
+                                };
+
+
+
+ if (document.getElementById('chart-cpu-usage') != null) {
+              var data_chart_cpu_usage = new google.visualization.DataTable();
+                  data_chart_cpu_usage.addColumn('date', 'Time');
+                  data_chart_cpu_usage.addColumn('number', 'CPU %');
+                  // data_chart_cpu_usage.addRow([new Date(),parseFloat({{ host.allMemUsage }})]);
+
+                   var chart_cpu_usage = new google.visualization.LineChart(document.getElementById('chart-cpu-usage'));
+                   chart_cpu_usage.draw(data_chart_cpu_usage, line_options_cpu);
+            }
+
+ if (document.getElementById('chart-disk-usage') != null) {
+              var data_chart_disk_usage = new google.visualization.DataTable();
+                  data_chart_disk_usage.addColumn('date', 'Time');
+
+                  {% for disk in domain.disks %}
+                      data_chart_disk_usage.addColumn('number', '{{ disk.dev }}-read');
+                      data_chart_disk_usage.addColumn('number', '{{ disk.dev }}-write');
+		  {% endfor %} 
+
+                   var chart_disk_usage = new google.visualization.LineChart(document.getElementById('chart-disk-usage'));
+                   chart_disk_usage.draw(data_chart_disk_usage, line_options_disks);
+            }
+ 
+ if (document.getElementById('chart-net-usage') != null) {
+              var data_chart_net_usage = new google.visualization.DataTable();
+                  data_chart_net_usage.addColumn('date', 'Time');
+
+                  {% for net in domain.networks  %}
+                      data_chart_net_usage.addColumn('number', '{{ net.dev }}-rx');
+                      data_chart_net_usage.addColumn('number', '{{ net.dev }}-tx');
+		  {% endfor %} 
+
+                   var chart_net_usage = new google.visualization.LineChart(document.getElementById('chart-net-usage'));
+                   chart_net_usage.draw(data_chart_net_usage, line_options_net);
+            }
+
+
+ setInterval(function() {
+	if (selectedTabHash != "#graph") 
+	     return;   
+
+           $.getJSON('/info/instusage/{{ host_id }}/{{ domain.name }}', function (result) {
+
+                     if (document.getElementById('chart-cpu-usage') != null) {
+                          data_chart_cpu_usage.addRow([new Date(),parseFloat(result['cpu']['data'][0])]);
+                          chart_cpu_usage.draw(data_chart_cpu_usage, line_options_cpu);
+                     }
+                     if (document.getElementById('chart-disk-usage') != null) {
+		          var hdd = result['hdd'];
+                          var rows_h=[];
+                         {% for disk in domain.disks %}
+                              for(var i in hdd)
+			         if (hdd[i]['dev'] == '{{ disk.dev }}') 
+                                          rows_h.push([hdd[i]['data']]);
+		         {% endfor %} 
+                     
+                          data_chart_disk_usage.addRow(
+			                  [ 
+					     new Date(),
+                                           {% for disk in domain.disks %}
+					      {% if forloop.counter0  != 0 %},{% endif %}
+   					                parseFloat(rows_h[{{ forloop.counter0 }}][0]['rd'][0]),
+   					                parseFloat(rows_h[{{ forloop.counter0 }}][0]['wr'][0])
+		                           {% endfor %} 
+					   ]);
+                          chart_disk_usage.draw(data_chart_disk_usage, line_options_disks);
+                          }
+                       if (document.getElementById('chart-net-usage') != null) {
+                          var net = result['net'];
+                          var rows_n=[];
+                         {% for network in domain.networks %}
+                              for(var i in net)
+                                 if (net[i]['dev'] == '{{ network.dev }}')
+                                          rows_n.push([net[i]['data']]);
+                         {% endfor %}
+
+
+                          data_chart_net_usage.addRow(
+			                  [ 
+					     new Date(),
+                                           {% for network in domain.networks %}
+					      {% if forloop.counter0  != 0 %},{% endif %}
+   					                parseFloat(rows_n[{{ forloop.counter0 }}][0]['rx'][0]),
+   					                parseFloat(rows_n[{{ forloop.counter0 }}][0]['tx'][0])
+		                           {% endfor %} 
+					   ]);
+                          chart_net_usage.draw(data_chart_net_usage, line_options_net);
+                     }
+
+});
+        }, {{ time_refresh }});
+
+
+}
+
+//function onlyOne(checkbox) {
+//    var checkboxes = document.querySelectorAll('[name^=sd]')
+//    checkboxes.forEach((item) => {
+//        if (item !== checkbox) item.checked = false
+//    })
+//}
+
+</script>
+
 {% endblock %}

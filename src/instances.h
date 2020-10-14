@@ -34,8 +34,16 @@ public:
     C_ATTR(instance, :Path :AutoArgs)
     void instance(Context *c, const QString &hostId, const QString &name);
 
+
+
 private:
     Virtlyst *m_virtlyst;
+
+    bool validateNumber(Context *c, const QString &input);
+    bool validateName(Context *c, const QString &input);
+    bool validateNamewSpace(Context *c, const QString &input);
+    QStringList errors;
+    QStringList messages;
 };
 
 #endif // INSTANCES_H

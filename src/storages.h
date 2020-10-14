@@ -36,6 +36,9 @@ public:
 
 private:
     Virtlyst *m_virtlyst;
+
+    bool validateNumber(Context *c, const QString &input);
+    bool validateName(Context *c, const QString &input);
 };
 
 #endif // STORAGES_H

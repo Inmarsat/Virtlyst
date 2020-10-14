@@ -20,7 +20,7 @@
 #include "lib/connection.h"
 #include "lib/nodedevice.h"
 #include "lib/interface.h"
-
+#include <Cutelyst/Plugins/CSRFProtection/CSRFProtection>
 #include <QLoggingCategory>
 
 Interfaces::Interfaces(Virtlyst *parent) : Controller(parent)
@@ -43,6 +43,7 @@ void Interfaces::index(Context *c, const QString &hostId)
     c->setStash(QStringLiteral("host"), QVariant::fromValue(conn));
 
     if (c->request()->isPost()) {
+        if (!CSRFProtection::checkPassed(c)) return;
         const ParamsMultiMap params = c->request()->bodyParameters();
         if (params.contains(QStringLiteral("create"))) {
             const QString delay = params[QStringLiteral("delay")];
@@ -94,6 +95,7 @@ void Interfaces::interface(Context *c, const QString &hostId, const QString &ifa
     }
 
     if (c->request()->isPost()) {
+        if (!CSRFProtection::checkPassed(c)) return;
         const ParamsMultiMap params = c->request()->bodyParameters();
         if (params.contains(QStringLiteral("stop"))) {
             iface->stop();

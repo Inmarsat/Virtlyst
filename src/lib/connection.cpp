@@ -21,7 +21,6 @@
 #include "domain.h"
 #include "interface.h"
 #include "network.h"
-#include "secret.h"
 #include "nodedevice.h"
 #include "storagepool.h"
 #include "storagevol.h"
@@ -35,12 +34,46 @@
 
 #include <QLoggingCategory>
 
-Q_LOGGING_CATEGORY(VIRT_CONN, "virt.connection")
 
+#include <Cutelyst/Plugins/StatusMessage>
+#include <Cutelyst/Plugins/Utils/Sql>
+
+#include <QSqlQuery>
+#include <QSqlError>
+
+#include <QUuid>
+#include <math.h>
+#include <QRegularExpression>
+#include <string>
+#include <regex>
+#include <QThread>
+// #include <QRandomGenerator>
+
+Q_LOGGING_CATEGORY(VIRT_CONN, "virt.connection")
+static QStringList m_libvirterr;
 static int authCreds[] = {
     VIR_CRED_AUTHNAME,
     VIR_CRED_PASSPHRASE,
 };
+
+static double pround(double  num, int dec)
+{
+    double m = (num < 0.0) ? -1.0 : 1.0;   // check if input is negative
+    double pwr = pow(10, dec);
+
+    return double(floor((double)num * m * pwr + 0.5) / pwr) * m;
+}
+
+QString convert_version(unsigned long &hvVer)
+{
+    unsigned long  major, minor, release;
+    major = hvVer / 1000000;
+    hvVer %= 1000000;
+    minor = hvVer / 1000;
+    release = hvVer % 1000;
+
+    return QString("%1.%2.%3").arg(major).arg(minor).arg(release);
+}
 
 static int authCb(virConnectCredentialPtr cred, unsigned int ncred, void *cbdata)
 {
@@ -79,8 +112,12 @@ static int authCb(virConnectCredentialPtr cred, unsigned int ncred, void *cbdata
 
 Connection::Connection(virConnectPtr conn, QObject *parent) : QObject(parent), m_conn(conn)
 {
-    virConnectRef(conn);
+    if (conn != NULL) virConnectRef(conn);
+    virSetErrorFunc(NULL,SaveErrorFunc);
+    GetSysInfo();
 }
+
+
 
 Connection::Connection(const QUrl &url, const QString &name, QObject *parent) : QObject(parent)
 {
@@ -100,6 +137,7 @@ Connection::Connection(const QUrl &url, const QString &name, QObject *parent) : 
         qCWarning(VIRT_CONN) << "Failed to open connection to" << url;
         return;
     }
+
     qCDebug(VIRT_CONN) << "Connected to" << uri;
 }
 
@@ -110,10 +148,56 @@ Connection::~Connection()
     }
 }
 
+void Connection::SaveErrorFunc(void *userdata, virErrorPtr err)
+{
+/*
+  fprintf(stderr, "Failure of libvirt library call:\n");
+  fprintf(stderr, " Code: %d\n", err->code);
+  fprintf(stderr, " Domain: %d\n", err->domain);
+  fprintf(stderr, " Message: %s\n", err->message);
+  fprintf(stderr, " Level: %d\n", err->level);
+  fprintf(stderr, " str1: %s\n", err->str1);
+  fprintf(stderr, " str2: %s\n", err->str2);
+  fprintf(stderr, " str3: %s\n", err->str3);
+  fprintf(stderr, " int1: %d\n", err->int1);
+  fprintf(stderr, " int2: %d\n", err->int2);
+*/
+
+ // skip error: Requested operation is not valid: cgroup CPUACCT controller is not mounted 
+  if ( err->code == VIR_ERR_NO_DOMAIN_METADATA) return;
+   std::string str = err->message;
+qDebug() <<  err->code << err->message;   
+   if (str.find("cgroup CPUACCT controller is not mounted") != std::string::npos)
+     return;
+  m_libvirterr.append(QStringLiteral("An error ('%1') occured: '%2'").arg(err->code).arg(err->message).remove(QRegularExpression("[\\n\\t\\r]")));
+
+}
+
+void Connection::delErrors()
+{
+  virErrorPtr err;
+  m_libvirterr.clear();
+  err = virSaveLastError();
+  virFreeError(err);
+
+}
+
 QString Connection::name() const
 {
     return m_connName;
 }
+
+
+QStringList Connection::getErrors()
+{
+    //return m_libvirterr;
+    QStringList s=m_libvirterr;
+    m_libvirterr.clear();
+    return s;
+}
+
+
+
 
 void Connection::setName(const QString &name)
 {
@@ -148,6 +232,124 @@ QString Connection::hypervisor() const
     return QString::fromUtf8(virConnectGetType(m_conn));
 }
 
+QString Connection::libvirt_version() const
+{
+    unsigned long hvVer;
+    virConnectGetLibVersion(m_conn, &hvVer);
+
+    return convert_version(hvVer);
+}
+QString Connection::hypervisor_version() const
+{
+    unsigned long hvVer;
+    virConnectGetVersion(m_conn, &hvVer);
+
+    return convert_version(hvVer);
+}
+
+QString Connection::GetSystemInfoElement(const QString &node,const QString &element) const
+{
+    QDomElement tmp=m_xmlsysinfo
+                       .documentElement()
+                       .firstChildElement(node)
+                       .firstChildElement(QStringLiteral("entry"));
+            
+            while (!tmp.isNull()) {
+                if (tmp.attribute(QStringLiteral("name")) == element)
+                    return tmp.firstChild().nodeValue();
+                tmp = tmp.nextSiblingElement(QStringLiteral("entry"));
+            }
+      return NULL;
+}
+
+QString Connection::hardware_vendor()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+   return GetSystemInfoElement("system","manufacturer");
+}
+
+QString Connection::hardware_product()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("system","product");
+}
+
+QString Connection::hardware_serial()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("system","serial");
+}
+
+QString Connection::bios_vendor()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("bios","vendor");
+}
+
+
+QString Connection::bios_version()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("bios","version");
+}
+
+
+QString Connection::bios_date()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("bios","date");
+}
+
+QString Connection::bios_release()
+{
+    if (!m_sysinfoLoaded) {
+        GetSysInfo();
+    }
+
+    return GetSystemInfoElement("bios","release");
+}
+
+bool Connection::GetSysInfo() 
+{
+     char *xml=virConnectGetSysinfo(m_conn,0);
+
+    m_sysinfoLoaded=false;
+    if (!xml) {
+        qCWarning(VIRT_CONN) << "Failed to load system informations";
+        return false;
+    }
+    const QString xmlString = QString::fromUtf8(xml);
+    free(xml);
+
+    QString errorString;
+    if (!m_xmlsysinfo.setContent(xmlString, &errorString)) {
+        qCCritical(VIRT_CONN) << "error" <<m_xmlsysinfo.isNull() << m_xmlsysinfo.toString();
+        return false;
+    }
+   m_sysinfoLoaded=true;
+   return true;
+
+}
+
+
 quint64 Connection::freeMemoryBytes() const
 {
     if (m_conn) {
@@ -181,6 +383,57 @@ QString Connection::memoryPretty()
     return Virtlyst::prettyKibiBytes(m_nodeInfo.memory);
 }
 
+
+QString Connection::usedMemoryPretty()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+
+
+    return Virtlyst::prettyKibiBytes(usedMemoryKiB());
+}
+
+QString Connection::freeMemoryPretty()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return Virtlyst::prettyKibiBytes(freeMemoryBytes()/1024);
+}
+uint Connection::cpuThreads()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return m_nodeInfo.threads;	
+}
+
+uint Connection::cpuCores()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return m_nodeInfo.cores;	
+}
+
+
+uint Connection::cpuSockets()
+{
+   if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return m_nodeInfo.sockets;	
+}
+
+uint Connection::cpuNodes()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return m_nodeInfo.nodes;	
+}
+
 uint Connection::cpus()
 {
     if (!m_nodeInfoLoaded) {
@@ -189,8 +442,18 @@ uint Connection::cpus()
     return m_nodeInfo.cpus;
 }
 
+uint Connection::cpus_f()
+{
+    if (!m_nodeInfoLoaded) {
+        loadNodeInfo();
+    }
+    return m_nodeInfo.mhz;
+}
+
+
 bool Connection::isAlive()
 {
+
     if (m_conn) {
         // This is will still return true when the connection
         // closed but no request has been made
@@ -323,8 +586,11 @@ bool getCPUStats(virConnectPtr conn, int cpuNum, int nparams, cpu_stats &stats)
     return false;
 }
 
-int Connection::allCpusUsage()
+double Connection::allCpusUsage()
 {
+
+// return QRandomGenerator::global()->bounded(100);
+
     int nparams = 0;
     if (virNodeGetCPUStats(m_conn, VIR_NODE_CPU_STATS_ALL_CPUS, NULL, &nparams, 0) == 0 &&
             nparams != 0) {
@@ -333,13 +599,14 @@ int Connection::allCpusUsage()
             return -1;
         }
 
-        if (t0.utilization) {
-            return t0.util;
-        }
+        if (t0.utilization) 
+            return pround(t0.util,2);
+        
 
-        QEventLoop loop;
-        QTimer::singleShot(1000, &loop, &QEventLoop::quit);
-        loop.exec();
+        //QEventLoop loop;
+        //QTimer::singleShot(1000, &loop, &QEventLoop::quit);
+        //loop.exec();
+	QThread::msleep(1000);
 
         cpu_stats t1;
         if (!getCPUStats(m_conn, VIR_NODE_CPU_STATS_ALL_CPUS, nparams, t1)) {
@@ -353,28 +620,56 @@ int Connection::allCpusUsage()
         double total_time  = user_time + sys_time + idle_time + iowait_time;
 
         double usage = (user_time + sys_time) / total_time * 100;
-
-        return usage;
+        return pround(usage,2);
     }
     return -1;
 }
 
-QStringList Connection::isoMedia()
+double Connection::allMemUsage()
 {
-    // TODO cache results
-    QStringList ret;
-    const QVector<StoragePool *> storages = storagePools(VIR_CONNECT_LIST_STORAGE_POOLS_ACTIVE, this);
-    for (StoragePool *pool : storages) {
-        const QVector<StorageVol *> vols = pool->storageVols();
-        for (StorageVol *vol : vols) {
-            const QString path = vol->path();
-            if (path.endsWith(QLatin1String(".iso"))) {
-                ret.append(path);
+
+// return QRandomGenerator::global()->bounded(100);
+	return pround((1-((double(freeMemoryBytes()/1024))/memory()))*100,2);
+}
+
+
+//QStringList Connection::isoMedia()
+//{
+//    QStringList ret;
+//    const QVector<StoragePool *> storages = storagePools(VIR_CONNECT_LIST_STORAGE_POOLS_ACTIVE, this);
+//    for (StoragePool *pool : storages) {
+//        const QVector<StorageVol *> vols = pool->storageVols();
+//        for (StorageVol *vol : vols) {
+//            const QString path = vol->path();
+//            if (path.endsWith(QLatin1String(".iso"),Qt::CaseInsensitive)) {
+//                ret.append(path);
+//            }
+//        }
+//    }
+//    return ret;
+//}
+//
+
+QVector<StorageVol *>  Connection::isoMedia()
+{
+
+    QVector<StorageVol *> images;
+    const QVector<StoragePool *> pools = storagePools(VIR_CONNECT_LIST_STORAGE_POOLS_ACTIVE, this);
+    for (StoragePool *pool : pools) {
+        const QVector<StorageVol *> vols = pool->storageVols(0);
+        for (StorageVol * vol : vols) {
+             if (vol->name().toLower().endsWith(QLatin1String(".iso")) ) {
+                images.append(vol);
             }
         }
     }
-    return ret;
+    return images;
 }
+
+
+
+
+
 
 QVector<QVariantList> Connection::getCacheModes() const
 {
@@ -395,19 +690,51 @@ QString Connection::lastError()
     const QString error = QString::fromUtf8(err->message);
     return error;
 }
+/*
+char * MetaDataLine(const char *elem)
+{
+        time_t rawtime;
+        struct tm * timeinfo;
+	static char buffer[80];
 
-bool Connection::domainDefineXml(const QString &xml)
+        time (&rawtime);
+        timeinfo = localtime(&rawtime);
+	strftime(buffer,sizeof(buffer),"%d-%m-%Y %H:%M:%S",timeinfo);
+	return (const_cast<char*> (QString("<instance>\n<%1>%2</%3>\n</instance>").arg(elem).arg(buffer).arg(elem).toStdString().c_str()));
+}
+
+*/
+bool Connection::domainDefineXml(const QString &xml,bool hv_relaxed,bool hv_tsc,bool uefi,bool autostart,bool update_creationTime)
 {
     virDomainPtr dom = virDomainDefineXML(m_conn, xml.toUtf8().constData());
     if (dom) {
-        virDomainFree(dom);
+	auto d = new Domain(dom, this);
+        if (update_creationTime) 
+	    d->AssignMetadata("creationTime");
+	  else
+	    d->AssignMetadata("lastModificationTime");
+
+        if (uefi) {
+           d->setUEFI(true);
+	   d->saveXml(update_creationTime);
+        }   
+        if (autostart) {
+           d->setAutostart(true);
+	   d->saveXml(update_creationTime);
+        }
+	free(d);
+        
+
+
+	virDomainFree(dom);
         return true;
     }
     return false;
 }
 
-bool Connection::createDomain(const QString &name, const QString &memory, const QString &vcpu, bool hostModel, const QString &uuid, const QVector<StorageVol *> &images, const QString &cacheMode, const QStringList &networks, bool virtIO, const QString &consoleType)
+bool Connection::createDomain(const QString &name, const QString &memory, const QString &vcpu, bool hostModel, const QString &uuid, const QVector<StorageVol *> &images, const QString &cacheMode, const QStringList &networks, const QString &new_target_bus, const QString &new_nic_type, const QString &consoleType,const QStringList &cdroms, bool hv_relaxed,bool hv_tsc,bool uefi, bool autostart,const QStringList &boot_from)
 {
+    int bootorder;
     QByteArray output;
     QXmlStreamWriter stream(&output);
 
@@ -432,32 +759,58 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
     stream.writeStartElement(QStringLiteral("os"));
     stream.writeStartElement(QStringLiteral("type"));
     stream.writeAttribute(QStringLiteral("arch"), cpuArch());
+    stream.writeAttribute(QStringLiteral("machine"), "pc-q35-4.2");
     stream.writeCharacters(osType());
     stream.writeEndElement(); // type
-
+/*
     stream.writeEmptyElement(QStringLiteral("boot"));
-    stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hd"));
+    stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("network"));
 
     stream.writeEmptyElement(QStringLiteral("boot"));
     stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("cdrom"));
-    stream.writeEndElement(); // os
+
+    stream.writeEmptyElement(QStringLiteral("boot"));
+    stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hd"));
+*/
+    stream.writeEmptyElement(QStringLiteral("bootmenu"));
+    stream.writeAttribute(QStringLiteral("enable"), QStringLiteral("yes"));
+    stream.writeAttribute(QStringLiteral("timeout"), QStringLiteral("5000")); // Due to satellite link
+    stream.writeEndElement(); // boot menu
 
     stream.writeStartElement(QStringLiteral("features"));
     stream.writeEmptyElement(QStringLiteral("acpi"));
     stream.writeEmptyElement(QStringLiteral("apic"));
     stream.writeEmptyElement(QStringLiteral("pae"));
+    if (hv_relaxed){
+       stream.writeStartElement(QStringLiteral("hyperv"));
+       stream.writeStartElement(QStringLiteral("relaxed"));
+       stream.writeAttribute(QStringLiteral("state"), "on");
+       stream.writeEndElement(); //relaxed
+      stream.writeEndElement();//hyperv
+     } 
+
     stream.writeEndElement(); // features
 
-    stream.writeEmptyElement(QStringLiteral("clock"));
+    
+    stream.writeStartElement(QStringLiteral("clock"));
     stream.writeAttribute(QStringLiteral("offset"), QStringLiteral("utc"));
+     if (hv_tsc){
+         stream.writeStartElement(QStringLiteral("timer"));
+         stream.writeAttribute(QStringLiteral("name"), "tsc");
+         stream.writeAttribute(QStringLiteral("present"), "yes");
+	stream.writeEndElement(); //timer 
+     }
+    stream.writeEndElement(); // clock
 
     stream.writeTextElement(QStringLiteral("on_poweroff"), QStringLiteral("destroy"));
     stream.writeTextElement(QStringLiteral("on_reboot"), QStringLiteral("restart"));
-    stream.writeTextElement(QStringLiteral("on_crash"), QStringLiteral("restart"));
+    stream.writeTextElement(QStringLiteral("on_crash"), QStringLiteral("restart")); 
 
+    bootorder=3;
     stream.writeStartElement(QStringLiteral("devices"));
     {
-        QVector<char> letters = { 'a', 'b', 'c', 'd', 'e'};//....
+	QString alph = "abcdefghijklmnopqrstuvwxyz";
+	int i=0;
         for (StorageVol *vol : images) {
             const QString type = vol->type();
 
@@ -489,68 +842,98 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
 
                 stream.writeEmptyElement(QStringLiteral("driver"));
                 stream.writeAttribute(QStringLiteral("name"), QStringLiteral("qemu"));
-                stream.writeAttribute(QStringLiteral("type"), vol->type());
+		if (vol->type() != "iso")
+                       stream.writeAttribute(QStringLiteral("type"), vol->type());
+		else
+                       stream.writeAttribute(QStringLiteral("type"), "raw");
+
                 if (!cacheMode.isEmpty()) {
                     stream.writeAttribute(QStringLiteral("cache"), cacheMode);
                 }
 
                 stream.writeEmptyElement(QStringLiteral("source"));
                 stream.writeAttribute(QStringLiteral("file"), vol->path());
+		//if (i==0) {
+                    stream.writeEmptyElement(QStringLiteral("boot"));
+                    stream.writeAttribute(QStringLiteral("order"), QStringLiteral("%1").arg(bootorder++));
+		// }   
             }
 
             stream.writeEmptyElement(QStringLiteral("target"));
-            if (virtIO) {
-                stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("virtio"));
-                stream.writeAttribute(QStringLiteral("dev"), QLatin1String("vd") + QLatin1Char(letters.takeFirst()));
-            } else {
-                stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("ide"));
-                stream.writeAttribute(QStringLiteral("dev"), QLatin1String("sd") + QLatin1Char(letters.takeFirst()));
-            }
+            stream.writeAttribute(QStringLiteral("bus"), new_target_bus);
+            
+            stream.writeAttribute(QStringLiteral("dev"), QLatin1String("vd") + alph.mid(i,1));
 
             stream.writeEndElement(); // disk
+	    i++;
         }
-
+	// qDebug() << networks;
         for (const QString &network : networks) {
+	  if (network != ""){
             stream.writeStartElement(QStringLiteral("interface"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("network"));
 
             stream.writeEmptyElement(QStringLiteral("source"));
             stream.writeAttribute(QStringLiteral("network"), network);
 
-            if (virtIO) {
-                stream.writeEmptyElement(QStringLiteral("model"));
-                stream.writeAttribute(QStringLiteral("type"), QStringLiteral("virtio"));
-            }
+           // stream.writeEmptyElement(QStringLiteral("mac"));
+           // stream.writeAttribute(QStringLiteral("address"), QStringLiteral("mac"));
+   
+
+            stream.writeEmptyElement(QStringLiteral("model"));
+            stream.writeAttribute(QStringLiteral("type"), new_nic_type);
+
 
             stream.writeEndElement(); // interface
+	 }   
         }
-
-        stream.writeStartElement(QStringLiteral("disk"));
-        stream.writeAttribute(QStringLiteral("type"), QStringLiteral("file"));
-        stream.writeAttribute(QStringLiteral("device"), QStringLiteral("cdrom"));
-        {
-
-            stream.writeEmptyElement(QStringLiteral("driver"));
+        bootorder=1;
+        for(int i=1; i<=2; i++)
+	{
+            stream.writeStartElement(QStringLiteral("disk"));
+            stream.writeAttribute(QStringLiteral("type"), QStringLiteral("file"));
+            stream.writeAttribute(QStringLiteral("device"), QStringLiteral("cdrom"));
+            
+	    stream.writeEmptyElement(QStringLiteral("driver"));
             stream.writeAttribute(QStringLiteral("name"), QStringLiteral("qemu"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("raw"));
 
             stream.writeEmptyElement(QStringLiteral("source"));
-            stream.writeAttribute(QStringLiteral("file"), QStringLiteral(""));
+	    if (cdroms.size()>(i-1)){
+                stream.writeAttribute(QStringLiteral("file"), cdroms.at(i-1));
+		
+		if ( cdroms.at(i-1) == boot_from.at(0))
+		    stream.writeEmptyElement(QStringLiteral("boot"));
+		    stream.writeAttribute(QStringLiteral("order"), QStringLiteral("%1").arg(bootorder++));
+		}
+            else {
+	        stream.writeAttribute(QStringLiteral("file"), QStringLiteral(""));
+		stream.writeEmptyElement(QStringLiteral("boot"));
+		stream.writeAttribute(QStringLiteral("order"), QStringLiteral("%1").arg(bootorder++));
 
+		}
             stream.writeEmptyElement(QStringLiteral("target"));
-            stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hda"));
-            stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("ide"));
+	    if ( i == 1 )
+                 stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("sdy"));
+	    else	 
+                 stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("sdz"));
+            stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("sata"));
 
             stream.writeEmptyElement(QStringLiteral("readonly"));
 
             stream.writeEmptyElement(QStringLiteral("address"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("drive"));
-            stream.writeAttribute(QStringLiteral("controller"), QStringLiteral("0"));
-            stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("1"));
+            stream.writeAttribute(QStringLiteral("controller"), QStringLiteral("1"));
+            stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("0"));
             stream.writeAttribute(QStringLiteral("target"), QStringLiteral("0"));
-            stream.writeAttribute(QStringLiteral("unit"), QStringLiteral("1"));
+	    if ( i == 1 )
+                  stream.writeAttribute(QStringLiteral("unit"), QStringLiteral("0"));
+	    else	  
+                  stream.writeAttribute(QStringLiteral("unit"), QStringLiteral("1"));
+	    
+        
+	    stream.writeEndElement(); // disk
         }
-        stream.writeEndElement(); // disk
 
         stream.writeEmptyElement(QStringLiteral("input"));
         stream.writeAttribute(QStringLiteral("type"), QStringLiteral("mouse"));
@@ -564,11 +947,14 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
         stream.writeAttribute(QStringLiteral("type"), consoleType);
         stream.writeAttribute(QStringLiteral("port"), QStringLiteral("-1"));
         stream.writeAttribute(QStringLiteral("autoport"), QStringLiteral("yes"));
-        stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("127.0.0.1"));
+        // stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("127.0.0.1"));
+        stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("0.0.0.0"));
+        stream.writeAttribute(QStringLiteral("passwd"), QUuid::createUuid().toString().remove(QLatin1Char('{')).remove(QLatin1Char('}')));
         {
             stream.writeEmptyElement(QStringLiteral("listen"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("address"));
-            stream.writeAttribute(QStringLiteral("address"), QStringLiteral("127.0.0.1"));
+            // stream.writeAttribute(QStringLiteral("address"), QStringLiteral("127.0.0.1"));
+            stream.writeAttribute(QStringLiteral("address"), QStringLiteral("0.0.0.0"));
         }
         stream.writeEndElement(); // graphics
 
@@ -578,7 +964,8 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
         stream.writeStartElement(QStringLiteral("video"));
         {
             stream.writeEmptyElement(QStringLiteral("model"));
-            stream.writeAttribute(QStringLiteral("type"), QStringLiteral("cirrus"));
+            // stream.writeAttribute(QStringLiteral("type"), QStringLiteral("cirrus"));
+            stream.writeAttribute(QStringLiteral("type"), QStringLiteral("vga"));
         }
         stream.writeEndElement(); // video
 
@@ -589,8 +976,9 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
     stream.writeEndElement(); // devices
 
     stream.writeEndElement(); // domain
-    qCDebug(VIRT_CONN) << "XML output" << output.constData();
-    return domainDefineXml(QString::fromUtf8(output));
+//    qDebug() << "XML output" << output.constData();
+    // qCDebug(VIRT_CONN) << "XML output" << output;
+    return domainDefineXml(QString::fromUtf8(output),hv_relaxed,hv_tsc,uefi,autostart,true);
 }
 
 QVector<Domain *> Connection::domains(int flags, QObject *parent)
@@ -728,7 +1116,8 @@ bool Connection::createInterface(const QString &name, const QString &netdev, con
     }
 
     stream.writeEndElement(); // interface
-    qCDebug(VIRT_CONN) << "XML output" << output;
+    // qDebug() << "XML output" << output;
+    // qCDebug(VIRT_CONN) << "XML output" << output;
 
     virInterfacePtr iface = virInterfaceDefineXML(m_conn, output.constData(), 0);
     if (iface) {
@@ -810,7 +1199,8 @@ bool Connection::createNetwork(const QString &name, const QString &forward, cons
     }
 
     stream.writeEndElement(); // network
-    qCDebug(VIRT_CONN) << "XML output" << output;
+    // qDebug() << "XML output" << output;
+    // qCDebug(VIRT_CONN) << "XML output" << output;
     virNetworkPtr net = virNetworkDefineXML(m_conn, output.constData());
     if (net) {
         virNetworkFree(net);
@@ -819,73 +1209,7 @@ bool Connection::createNetwork(const QString &name, const QString &forward, cons
     return false;
 }
 
-QVector<Secret *> Connection::secrets(uint flags, QObject *parent)
-{
-    QVector<Secret *> ret;
-    virSecretPtr *secrets;
-    int count = virConnectListAllSecrets(m_conn, &secrets, flags);
-    if (count > 0) {
-        for (int i = 0; i < count; ++i) {
-            auto secret = new Secret(secrets[i], this, parent);
-            ret.append(secret);
-        }
-        free(secrets);
-    }
-    return ret;
-}
 
-bool Connection::createSecret(const QString &ephemeral, const QString &usageType, const QString &priv,  const QString &data)
-{
-    QByteArray output;
-    QXmlStreamWriter stream(&output);
-
-    stream.writeStartElement(QStringLiteral("secret"));
-    if (!ephemeral.isEmpty()) {
-        stream.writeAttribute(QStringLiteral("ephemeral"), ephemeral);
-    }
-    if (!priv.isEmpty()) {
-        stream.writeAttribute(QStringLiteral("private"), priv);
-    }
-
-    stream.writeStartElement(QStringLiteral("usage"));
-    stream.writeAttribute(QStringLiteral("type"), usageType);
-    if (usageType == QLatin1String("ceph")) {
-        stream.writeTextElement(QStringLiteral("name"), data);
-    } else if (usageType == QLatin1String("volume")) {
-        stream.writeTextElement(usageType, data);
-    } else if (usageType == QLatin1String("iscsi")) {
-        stream.writeTextElement(QStringLiteral("target"), data);
-    }
-    stream.writeEndElement(); // usage
-
-    stream.writeEndElement(); // secret
-    qDebug(VIRT_CONN) << "XML output" << output;
-//    xml.appendChild();
-    virSecretPtr secret = virSecretDefineXML(m_conn, output.constData(), 0);
-    if (secret) {
-        virSecretFree(secret);
-        return true;
-    }
-    return false;
-}
-
-Secret *Connection::getSecretByUuid(const QString &uuid, QObject *parent)
-{
-    virSecretPtr secret = virSecretLookupByUUIDString(m_conn, uuid.toLatin1().constData());
-    if (!secret) {
-        return nullptr;
-    }
-    return new Secret(secret, this, parent);
-}
-
-bool Connection::deleteSecretByUuid(const QString &uuid)
-{
-    virSecretPtr secret = virSecretLookupByUUIDString(m_conn, uuid.toLatin1().constData());
-    if (!secret) {
-        return true;
-    }
-    return virSecretUndefine(secret) == 0;
-}
 
 QVector<StoragePool *> Connection::storagePools(int flags, QObject *parent)
 {
@@ -939,11 +1263,13 @@ bool Connection::createStoragePool(const QString &name, const QString &type, con
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // pool
-//    qDebug(VIRT_CONN) << "XML output" << output;
+//    qDebug() << "XML output" << output;
+//  qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	//qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -987,11 +1313,13 @@ bool Connection::createStoragePoolCeph(const QString &name, const QString &ceph_
     stream.writeEndElement(); // source
 
     stream.writeEndElement(); // pool
-    qDebug(VIRT_CONN) << "XML output" << output;
+    // qDebug() << "XML output" << output;
+    //qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	// qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -1031,11 +1359,13 @@ bool Connection::createStoragePoolNetFs(const QString &name, const QString &netf
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // pool
-    qDebug(VIRT_CONN) << "XML output" << output;
+    //qDebug() << "XML output" << output;
+    // qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	// qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -1055,20 +1385,24 @@ StoragePool *Connection::getStoragePool(const QString &name, QObject *parent)
     return new StoragePool(pool, parent);
 }
 
+
 QVector<StorageVol *> Connection::getStorageImages(QObject *parent)
 {
+
+
     QVector<StorageVol *> images;
     const QVector<StoragePool *> pools = storagePools(VIR_CONNECT_LIST_STORAGE_POOLS_ACTIVE, parent);
     for (StoragePool *pool : pools) {
-        const QVector<StorageVol *> vols = pool->storageVols(0);
+        QVector<StorageVol *> vols = pool->storageVols(0);
         for (StorageVol * vol : vols) {
-            if (!vol->name().endsWith(QLatin1String(".iso"))) {
+             if (!vol->name().toLower().endsWith(QLatin1String(".iso")) && vol->usedby() == "") {
                 images.append(vol);
             }
         }
     }
     return images;
 }
+
 
 StorageVol *Connection::getStorageVolByPath(const QString &path, QObject *parent)
 {
@@ -1100,6 +1434,8 @@ void Connection::loadNodeInfo()
     virNodeGetInfo(m_conn, &m_nodeInfo);
 }
 
+
+
 bool Connection::loadDomainCapabilities()
 {
     char *xml = virConnectGetCapabilities(m_conn);
@@ -1108,7 +1444,8 @@ bool Connection::loadDomainCapabilities()
         return false;
     }
     const QString xmlString = QString::fromUtf8(xml);
-//    qDebug(VIRT_CONN) << "Caps" << xml;
+//    qDebug() << "Caps" << xml;
+//  qDebug(VIRT_CONN) << "Caps" << xml; 
     free(xml);
 
     QString errorString;
@@ -1118,10 +1455,10 @@ bool Connection::loadDomainCapabilities()
     }
 
     m_domainCapabilitiesLoaded = true;
-    qDebug(VIRT_CONN) << "kvmSupported" << kvmSupported();
+    // qDebug() << "kvmSupported" << kvmSupported();
     return true;
 }
-
+/*
 QString Connection::dataFromSimpleNode(const QString &element) const
 {
     return m_xmlCapsDoc.
@@ -1130,3 +1467,4 @@ QString Connection::dataFromSimpleNode(const QString &element) const
             .firstChild()
             .nodeValue();
 }
+*/

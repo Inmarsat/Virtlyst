@@ -21,8 +21,8 @@ label input[type="radio"], label input[type="checkbox"] {
 
 .navbar-inverse {
     text-shadow: 0 -1px 0 rgba(0, 0, 0, .15);
-    background-color: #563d7c;
-    border-color: #463265;
+    background-color:   rgb(0, 55, 100);
+    border-color:  rgb(0, 55, 100);
     box-shadow: 0 1px 0 rgba(255, 255, 255, .1);
 }
 

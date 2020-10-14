@@ -36,6 +36,8 @@ class Domain : public QObject
     Q_PROPERTY(QString uuid READ uuid CONSTANT)
     Q_PROPERTY(QString title READ title CONSTANT)
     Q_PROPERTY(QString description READ description CONSTANT)
+    Q_PROPERTY(QString creationTime READ creationTime CONSTANT)
+    Q_PROPERTY(QString lastModificationTime  READ lastModificationTime CONSTANT)
     Q_PROPERTY(int status READ status CONSTANT)
     Q_PROPERTY(int currentVcpu READ currentVcpu CONSTANT)
     Q_PROPERTY(int vcpu READ vcpu CONSTANT)
@@ -46,10 +48,13 @@ class Domain : public QObject
     Q_PROPERTY(QString currentMemoryPretty READ currentMemoryPretty CONSTANT)
     Q_PROPERTY(bool hasManagedSaveImage READ hasManagedSaveImage CONSTANT)
     Q_PROPERTY(bool autostart READ autostart CONSTANT)
+    Q_PROPERTY(bool useUEFI READ useUEFI CONSTANT)
+    Q_PROPERTY(QStringList getErrors READ getErrors CONSTANT)
     Q_PROPERTY(QString consoleType READ consoleType CONSTANT)
     Q_PROPERTY(QString consolePassword READ consolePassword CONSTANT)
     Q_PROPERTY(QString consoleKeymap READ consoleKeymap CONSTANT)
     Q_PROPERTY(QVariantList disks READ disks CONSTANT)
+    Q_PROPERTY(bool can_take_snapshots READ can_take_snapshots CONSTANT)
     Q_PROPERTY(QVariantList cloneDisks READ cloneDisks CONSTANT)
     Q_PROPERTY(QVariantList media READ media CONSTANT)
     Q_PROPERTY(QVariantList networks READ networks CONSTANT)
@@ -58,7 +63,9 @@ public:
     explicit Domain(virDomainPtr domain, Connection *conn, QObject *parent = nullptr);
     ~Domain();
 
-    bool saveXml();
+    bool can_take_snapshots();
+    bool saveXml(bool update_creationTime = false);
+
 
     QString xml();
 
@@ -68,13 +75,31 @@ public:
     QString title();
     void setTitle(const QString &title);
 
+    int AssignMetadata(const char *data);
     QString description();
+    QString creationTime();
+    QString lastModificationTime();
     void setDescription(const QString &description);
+
+    void setNetworkTypeForMac(const QString &network_mac,const QString &network_type,const QString &network_source);
+    void setDiskDevForBus(const QString &disk_dev,const QString &disk_bus,const QString &disk_source,const QString &disk_boot_from);
+    QDomElement RemoveOsBoot();
+
+    void RemoveDisk(const QString &disk_dev);
+    void RemoveNic(const QString &network_mac);
+   
+    int AddDisk(const QString &disk_source,const QString &disk_type,const QString &bus_type);
+    int AddNic(const QString &nic_bus,const QString &nic_network);
 
     int status();
 
     int currentVcpu();
     void setCurrentVcpu(int number);
+
+    QStringList getErrors();
+    void delErrors();
+    bool useUEFI();
+    void setUEFI(bool yes);
 
     int vcpu();
     void setVcpu(int number);
@@ -117,23 +142,25 @@ public:
     QVariantList networks();
     QStringList networkTargetDevs();
 
-    void start();
+    bool start();
     void shutdown();
     void suspend();
-    void resume();
+    bool resume();
     void destroy();
+    void reset();
     void undefine();
     void managedSave();
     void managedSaveRemove();
     void setAutostart(bool enable);
 
-    bool attachDevice(const QString &xml);
+ //   bool attachDevice(const QString &xml);
     bool updateDevice(const QString &xml, uint flags);
 
-    void mountIso(const QString &dev, const QString &image);
+    bool mountIso(const QString &dev, const QString &image, const QString &bootorder);
     void umountIso(const QString &dev, const QString &image);
 
 private:
+
     QDomDocument xmlDoc();
     QString dataFromSimpleNode(const QString &element);
     void setDataToSimpleNode(const QString &element, const QString &data);
@@ -150,6 +177,7 @@ private:
     QMap<QString, std::pair<qint64, qint64>> m_hddUsageMiBs;
     bool m_gotStats = false;
     bool m_gotInfo = false;
+    bool m_can_take_snapshots = false;
 };
 
 #endif // DOMAIN_H

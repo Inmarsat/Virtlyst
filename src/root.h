@@ -18,6 +18,7 @@
 #define ROOT_H
 
 #include <Cutelyst/Controller>
+#include <QTimer>
 
 using namespace Cutelyst;
 
@@ -42,14 +43,17 @@ public:
     C_ATTR(defaultPage, :Path)
     void defaultPage(Context *c);
 
+    C_ATTR(csrfdenied, :Local :Private :AutoArgs :ActionClass("RenderView"))
+    void csrfdenied(Context *c);
+
 private Q_SLOTS:
     bool Auto(Context *c);
-
+   
 private:
     C_ATTR(End, :ActionClass("RenderView"))
     void End(Context *c) { Q_UNUSED(c); }
-
     Virtlyst *m_virtlyst;
+    int m_clients;
 };
 
 #endif //ROOT_H

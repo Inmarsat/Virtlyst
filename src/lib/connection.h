@@ -21,11 +21,11 @@
 #include <QObject>
 #include <QDomDocument>
 #include <libvirt/libvirt.h>
+#include <libvirt/virterror.h>
 
 class Domain;
 class Interface;
 class Network;
-class Secret;
 class NodeDevice;
 class StoragePool;
 class StorageVol;
@@ -36,12 +36,31 @@ class Connection : public QObject
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(QString hostname READ hostname CONSTANT)
     Q_PROPERTY(QString hypervisor READ hypervisor CONSTANT)
+    Q_PROPERTY(QString hypervisor_version READ hypervisor_version CONSTANT)
+    Q_PROPERTY(QString libvirt_version READ libvirt_version CONSTANT)
+    Q_PROPERTY(QString hardware_vendor READ hardware_vendor CONSTANT)
+    Q_PROPERTY(QString hardware_product READ hardware_product CONSTANT)
+    Q_PROPERTY(QString hardware_serial READ hardware_serial CONSTANT)
+    Q_PROPERTY(QString bios_vendor READ bios_vendor CONSTANT)
+    Q_PROPERTY(QString bios_version READ bios_version CONSTANT)
+    Q_PROPERTY(QString bios_date READ bios_date CONSTANT)
+    Q_PROPERTY(QString bios_release READ bios_release CONSTANT)
     Q_PROPERTY(QString memoryPretty READ memoryPretty CONSTANT)
+    Q_PROPERTY(QString usedMemoryPretty READ usedMemoryPretty CONSTANT)
+    Q_PROPERTY(QString freeMemoryPretty READ freeMemoryPretty CONSTANT)
     Q_PROPERTY(uint cpus READ cpus CONSTANT)
+    Q_PROPERTY(uint cpus_f READ cpus_f CONSTANT)
+    Q_PROPERTY(double allCpusUsage READ allCpusUsage CONSTANT)
+    Q_PROPERTY(double allMemUsage READ allMemUsage CONSTANT)
     Q_PROPERTY(QString cpuArch READ cpuArch CONSTANT)
     Q_PROPERTY(QString cpuVendor READ cpuVendor CONSTANT)
     Q_PROPERTY(QString cpuModel READ cpuModel CONSTANT)
-    Q_PROPERTY(QStringList isoMedia READ isoMedia CONSTANT)
+    Q_PROPERTY(uint cpuNodes READ cpuNodes CONSTANT)
+    Q_PROPERTY(uint cpuSockets READ cpuSockets CONSTANT)
+    Q_PROPERTY(uint cpuCores READ cpuCores CONSTANT)
+    Q_PROPERTY(uint cpuThreads READ cpuThreads CONSTANT)
+    Q_PROPERTY(QVector<StorageVol*> isoMedia READ isoMedia CONSTANT)
+    Q_PROPERTY(QStringList getErrors READ getErrors CONSTANT)
 public:
     explicit Connection(virConnectPtr conn, QObject *parent = nullptr);
     explicit Connection(const QUrl &url, const QString &name, QObject *parent = nullptr);
@@ -55,6 +74,15 @@ public:
     QString uri() const;
     QString hostname() const;
     QString hypervisor() const;
+    QString hypervisor_version() const;
+    QString libvirt_version() const;
+    QString hardware_vendor();
+    QString hardware_serial();
+    QString hardware_product();
+    QString bios_vendor();
+    QString bios_version();
+    QString bios_date();
+    QString bios_release();
     quint64 freeMemoryBytes() const;
 
     quint64 usedMemoryKiB();
@@ -62,7 +90,10 @@ public:
 
     quint64 memory();
     QString memoryPretty();
+    QString usedMemoryPretty();
+    QString freeMemoryPretty();
     uint cpus();
+    uint cpus_f();
 
     bool isAlive();
     int maxVcpus() const;
@@ -72,19 +103,29 @@ public:
     QString cpuModel();
     QString osType();
     QString modelCpu();
+
+    uint cpuNodes(); 
+    uint cpuSockets(); 
+    uint cpuCores();
+    uint cpuThreads();
+
+    double allCpusUsage();
+    double allMemUsage();
     bool kvmSupported();
 
-    int allCpusUsage();
-
-    QStringList isoMedia();
+    QVector<StorageVol*> isoMedia();
+    QStringList getErrors();
+    void delErrors();
 
     QVector<QVariantList> getCacheModes() const;
 
     QString lastError();
-    bool domainDefineXml(const QString &xml);
+    bool domainDefineXml(const QString &xml,bool hv_relaxed,bool hv_tsc,bool uefi, bool autostart,bool update_creationTime = false);
     bool createDomain(const QString &name, const QString &memory, const QString &vcpu, bool hostModel,
                       const QString &uuid, const QVector<StorageVol *> &images, const QString &cacheMode,
-                      const QStringList &networks, bool virtIO, const QString &consoleType);
+                      const QStringList &networks, const QString &new_target_bus, const QString &new_nic_type, 
+		      const QString &consoleType,const QStringList &cdroms,
+		      bool hv_relaxed,bool hv_tsc,bool uefi,bool autostart,const QStringList &boot_from);
 
     QVector<Domain *> domains(int flags, QObject *parent = nullptr);
     Domain *getDomainByUuid(const QString &uuid, QObject *parent = nullptr);
@@ -102,11 +143,7 @@ public:
     bool createNetwork(const QString &name, const QString &forward, const QString &gateway, const QString &mask,
                        const QString &bridge, bool dhcp, bool openvswitch, bool fixed = false);
 
-    QVector<Secret *> secrets(uint flags, QObject *parent = nullptr);
 
-    bool createSecret(const QString &ephemeral, const QString &usageType, const QString &priv, const QString &data);
-    Secret *getSecretByUuid(const QString &uuid, QObject *parent = nullptr);
-    bool deleteSecretByUuid(const QString &uuid);
 
     QVector<StoragePool *> storagePools(int flags, QObject *parent = nullptr);
     bool createStoragePool(const QString &name, const QString &type, const QString &source, const QString &target);
@@ -119,15 +156,21 @@ public:
 
     QVector<NodeDevice *> nodeDevices(uint flags, QObject *parent = nullptr);
 
+
 private:
+    bool GetSysInfo();
     void loadNodeInfo();
     bool loadDomainCapabilities();
-    QString dataFromSimpleNode(const QString &element) const;
+    QString GetSystemInfoElement(const QString &node,const QString &element) const;
+//    QString dataFromSimpleNode(const QString &element) const;
 
     QString m_connName;
+    static void SaveErrorFunc(void*, virErrorPtr);
     virConnectPtr m_conn;
     virNodeInfo m_nodeInfo;
     QDomDocument m_xmlCapsDoc;
+    QDomDocument m_xmlsysinfo;
+    bool m_sysinfoLoaded = false;
     bool m_nodeInfoLoaded = false;
     bool m_domainCapabilitiesLoaded = false;
 };

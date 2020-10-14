@@ -2,7 +2,7 @@
 {% block title %}{% i18n "Network Pool" %}{% endblock %}
 {% block content %}
     {% include 'sidebar.html' %}
-    <div class="main col-xs-12 col-sm-9">
+    <div class="col-md-9 col-md-offset-2 content">
         {% if errors %}
             {% for error in errors %}
                 <div class="alert alert-danger">
@@ -25,7 +25,7 @@
                     <tr>
                         <td>{% i18n "State" %}</td>
                         <td>
-                            <form action="" method="post" role="form">{{ csrf_token }}
+                            <form action="" method="post" role="form">{% c_csrf_token %}
                                 {% if not network.active %}
                                     <input type="submit" class="btn btn-xs btn-default" name="start"
                                            value="{% i18n "Start" %}">
@@ -41,7 +41,7 @@
                     <tr>
                         <td>{% i18n "Autostart" %}</td>
                         <td>
-                            <form action="" method="post" role="form">{{ csrf_token }}
+                            <form action="" method="post" role="form">{% c_csrf_token %}
                                 {% if not network.autostart %}
                                     <input type="submit" class="btn btn-xs btn-default" name="set_autostart"
                                            value="{% i18n "Enable" %}">

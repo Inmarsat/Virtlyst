@@ -1,0 +1,48 @@
+FROM alpine:3.11.3 as builder
+
+#ARG CUTELYST_VERSION=v2.4.1
+ARG CUTELYST_VERSION=2.11.0
+#ARG VIRTLYST_VERSION=v1.1.0
+ARG uid
+ENV UID=$uid
+
+RUN adduser -D -u $UID builder
+
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+
+# Install build dependencies
+RUN apk update && apk add --no-cache \
+  git \
+  make \
+  cmake \
+  g++ \
+  qt5-qtbase \
+  qt5-qtbase-sqlite \
+  qt5-qtbase-postgresql \
+  qt5-qtbase-dev \
+  qt5-qtdeclarative \
+  qt5-qtdeclarative-dev \
+  qt5-qttools-dev \
+  libpq \
+  libssh-dev \
+  libvirt-dev 
+
+#build cutelee
+RUN git clone https://github.com/cutelyst/cutelee.git \
+ && cd cutelee \
+ && mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local \
+ && cmake --build . \
+ && cmake --build . --target install 
+
+
+# Build cutelyst
+RUN wget https://github.com/cutelyst/cutelyst/archive/v$CUTELYST_VERSION.tar.gz \
+ && tar zxvpf v$CUTELYST_VERSION.tar.gz \ 
+ && cd cutelyst-$CUTELYST_VERSION \
+ &&  mkdir build && cd build \
+ && export QT_SELECT=qt5 \
+ && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DPLUGIN_CSRFPROTECTION=on -DPLUGIN_VIEW_CUTELEE=on \
+ && make && make install
+
+USER builder
+WORKDIR /Virtlyst

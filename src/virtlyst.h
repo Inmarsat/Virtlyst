@@ -22,6 +22,11 @@
 #include <QHash>
 #include <QSharedPointer>
 #include <QUrl>
+#include <QTimer>
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(VIRTLYST)
+
 
 using namespace Cutelyst;
 
@@ -30,12 +35,15 @@ class ServerConn : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString name MEMBER name CONSTANT)
+    Q_PROPERTY(QString vesselname MEMBER vesselname CONSTANT)
     Q_PROPERTY(QString hostname MEMBER hostname CONSTANT)
     Q_PROPERTY(QString login MEMBER login CONSTANT)
     Q_PROPERTY(QString password MEMBER password CONSTANT)
+    Q_PROPERTY(QString cnumber MEMBER cnumber CONSTANT)
     Q_PROPERTY(int type MEMBER type CONSTANT)
-    Q_PROPERTY(int id MEMBER id CONSTANT)
+    Q_PROPERTY(QString id MEMBER id CONSTANT)
     Q_PROPERTY(bool alive READ alive CONSTANT)
+    Q_PROPERTY(bool isonline READ isonline CONSTANT)
 public:
     enum ServerType {
         ConnTCP = 1,
@@ -47,13 +55,16 @@ public:
     ~ServerConn() {}
 
     bool alive();
+    bool isonline();
     ServerConn *clone(QObject *parent);
 
-    int id;
+    QString id;
     QString name;
+    QString vesselname;
     QString hostname;
     QString login;
     QString password;
+    QString cnumber;
     int type;
     QUrl url;
     Connection *conn = nullptr;
@@ -77,19 +88,25 @@ public:
     Connection *connection(const QString &id, QObject *parent);
 
     static QString prettyKibiBytes(quint64 kibiBytes);
+    static QString extensionByType(QString ext);
 
     static QStringList keymaps();
 
-    static bool createDbFlavor(QSqlQuery &query, const QString &label, int memory, int vcpu, int disk);
+//    static bool createDbFlavor(QSqlQuery &query, const QString &label, int memory, int vcpu, int disk);
 
     void updateConnections();
+    QTimer *t1;
+    quint64 id1;
 
 private:
     bool createDB();
 
     QMap<QString, ServerConn *> m_connections;
     QString m_dbPath;
+    static bool messageHandlerInstalled;
 };
+
+bool checkSSHconnection(QString &host, int port);
 
 #endif //VIRTLYST_H
 

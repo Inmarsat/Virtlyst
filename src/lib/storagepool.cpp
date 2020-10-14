@@ -57,6 +57,15 @@ QString StoragePool::used()
     return QString();
 }
 
+QString StoragePool::sfree()
+{
+    if (getInfo()) {
+        return Virtlyst::prettyKibiBytes((m_info.capacity-m_info.allocation) / 1024);
+    }
+    return QString();
+}
+
+
 int StoragePool::percent()
 {
     if (getInfo()) {
@@ -183,7 +192,7 @@ StorageVol *StoragePool::createStorageVolume(const QString &name, const QString 
     QString localFormat(format);
     qint64 sizeByte = sizeGiB * 1073741824;
     qint64 alloc = sizeByte;
-    
+
     if (format == QLatin1String("unknown")) {
         localFormat = QStringLiteral("raw");
     }
@@ -199,11 +208,17 @@ StorageVol *StoragePool::createStorageVolume(const QString &name, const QString 
 
     stream.writeStartElement(QStringLiteral("target"));
     stream.writeStartElement(QStringLiteral("format"));
-    stream.writeAttribute(QStringLiteral("type"), format);
+    stream.writeAttribute(QStringLiteral("type"), localFormat);
     stream.writeEndElement(); // format
+    stream.writeStartElement(QStringLiteral("permissions"));
+    stream.writeTextElement(QStringLiteral("mode"), QString::number(644));
+    stream.writeTextElement(QStringLiteral("owner"), QString::number(1000));
+    stream.writeTextElement(QStringLiteral("group"), QString::number(36));
+    stream.writeEndElement(); // permissions
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // volume
+
     qDebug() << "XML output" << output;
 
     virStorageVolPtr vol = virStorageVolCreateXML(m_pool, output.constData(), flags);

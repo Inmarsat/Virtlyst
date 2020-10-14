@@ -32,6 +32,7 @@ class StoragePool : public QObject
     Q_PROPERTY(QString type READ type CONSTANT)
     Q_PROPERTY(QString size READ size CONSTANT)
     Q_PROPERTY(QString used READ used CONSTANT)
+    Q_PROPERTY(QString sfree READ sfree CONSTANT)
     Q_PROPERTY(int percent READ percent CONSTANT)
     Q_PROPERTY(int state READ state CONSTANT)
     Q_PROPERTY(QString status READ status CONSTANT)
@@ -47,13 +48,13 @@ public:
     QString type();
     QString size();
     QString used();
+    QString sfree();
     int percent();
     int state();
     QString status();
     bool active();
     bool autostart();
     int volumeCount();
-
     QString path();
 
     bool start();

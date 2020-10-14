@@ -1,92 +1,92 @@
 {% extends "base.html" %}
 {% block title %}{% i18n "Overview" %}{% endblock %}
 {% block content %}
-    {% include 'sidebar.html' %}
-    <div class="main col-xs-12 col-sm-9">
-        {% if errors %}
-            {% for error in errors %}
-                <div class="alert alert-danger">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    {{ error }}
-                </div>
-            {% endfor %}
-        {% endif %}
+   {% include 'sidebar.html' %}
+      <br>
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3">
+        <!-- <h1 class="h2">Host Information</h1> -->
+      </div>
+        <div class="row">
+          <div class="col-md-4 col-md-offset-2  content">
+            <div style="background-color: #eee"  class="card ">
+              <div style="text-align:center;background-color: #ddd"  class="card-header">
+                <span class="card-title">CPU</span>
+              </div>
+		<div  id="chart_cpu" ></div> 
+              <div class="card-body"> <br />
+                <strong>Type:</strong> {{ host.cpuVendor }} /  {{ host.cpuArch }}  <br>
+                <strong>Count:</strong> {{ host.cpus }}  <br>
+		<strong>Speed:</strong> {{ host.cpus_f }}  MHz <br>
+		<strong>Nodes/Sockets/Cores/Threads:</strong> {{ host.cpuNodes }}/{{ host.cpuSockets }}/{{ host.cpuCores }}/{{ host.cpuThreads }} <br> 
+	      </div>
+              <div class="card-footer">
+              </div>
+            </div>
+          </div>
+	
+          <div class="col-md-4 content">
+            <div style="background-color: #eee"  class="card ">
+              <div style="text-align:center;background-color: #ddd"  class="card-header">
+                <span class="card-title">Memory</span>
+              </div>
+		<div id="chart_mem" ></div>
+              <div class="card-body"> <br />
+                <strong>Total:</strong> {{ host.memoryPretty }} <br>
+		<strong>Used:</strong> {{ host.usedMemoryPretty }} <br>
+		<strong>Free:</strong> {{ host.freeMemoryPretty }} <br /> </div>
+              <div class="card-footer">
+              </div>
+            </div>
+          </div>
 
-        <h4>{% i18n "Basic details" %}</h4>
-        <table class="table table-hover table-nolines">
-            <tbody>
-                <tr>
-                    <td>{% i18n "Connection" %}</td>
-                    <td>{{ host.uri }}</td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Hostname" %}</td>
-                    <td>{{ host.hostname }}</td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Hypervisor" %}</td>
-                    <td>{{ host.hypervisor }}</td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Memory" %}</td>
-                    <td>{{ host.memoryPretty }}<!--|filesizeformat--></td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Logical CPUs" %}</td>
-                    <td>{{ host.cpus }}</td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Processor" %}</td>
-                    <td>{{ host.cpuVendor }} - {{ host.cpuModel }}</td>
-                </tr>
-                <tr>
-                    <td>{% i18n "Architecture" %}</td>
-                    <td>{{ host.cpuArch }}</td>
-                </tr>
-            </tbody>
-        </table>
+ 
+          <div style="width:16%" class="col-md-2  content">
+            <div style="background-color: #eee" class="card ">
+              <div style="text-align:center;background-color: #ddd" class="card-header">
+                <span class="card-title">System</span>
+              </div>
+              <div class="card-body">
+                <strong>Host:</strong> {{ host.hostname }} <br />
+		<strong>Hardware Vendor:</strong> {{ host.hardware_vendor }} <br />
+                <strong>Hypervisor:</strong> {{ host.hypervisor }}-{{host.hypervisor_version }} <br>
+		<strong>Libvirt:</strong> {{ host.libvirt_version }} <br>
+		<strong>Product:</strong> {{ host.hardware_product }} <br />
+		<strong>Serial:</strong> {{ host.hardware_serial }} <br />
+		<strong>Bios Vendor:</strong> {{ host.bios_vendor }} <br />
+		<strong>Bios Version/Date/Release:</strong> {{ host.bios_version }}/{{ host.bios_date }}/{{ host.bios_release }} </br /> </div>
+              <div class="card-footer">
+              </div>
+            </div>
+          </div>
 
-        <h4>{% i18n "Performance" %}</h4>
-        <p>{% i18n "CPU usage" %}</p>
-        <canvas id="cpuChart" width="700" height="200"></canvas>
-        <p>{% i18n "Memory usage" %}</p>
-        <canvas id="memoryChart" width="700" height="200"></canvas>
-    </div>
-    {% include 'sidebar_close.html' %}
-{% endblock %}
-{% block script %}
-    <script src="/static/js/Chart.min.js"></script>
-    <script>
-        var cpu_ctx = $("#cpuChart").get(0).getContext("2d");
-        var cpuChart = new Chart(cpu_ctx);
-        var cpu_options = {
-            animation: false,
-            pointDotRadius: 2,
-            scaleLabel: "<%=value%> %",
-            scaleOverride: true,
-            scaleSteps: 10,
-            scaleStepWidth: 10,
-            scaleStartValue: 0,
-            responsive: true
-        };
 
-        var mem_ctx = $("#memoryChart").get(0).getContext("2d");
-        var memChart = new Chart(mem_ctx);
-        var mem_options = {
-            animation: false,
-            pointDotRadius: 2,
-            scaleLabel: "<%=value%> MiB",
-            responsive: true
-        };
+  
+          <div style="width:80%" class="col-md-9 col-md-offset-2  content">
+            <div style="background-color: #eee" class="card ">
+              <div style="text-align:left;background-color: #ddd" class="card-header">
+                <span class="card-title">Storage</span>
+              </div>
+              <div class="card-body">
 
-        function hostusage() {
-            $.getJSON('/info/hostusage/{{ host_id }}', function (data) {
-                cpuChart.Line(data['cpu'], cpu_options);
-                memChart.Line(data['memory'], mem_options);
-            });
-        }
-        $(function () {
-            window.setInterval('hostusage()', {{ time_refresh }});
-        });
-    </script>
+                  <div class='table-responsive'>
+		      <table class='table table-condensed'>
+		              <tr><th> Name</th><th> Percentage</th><th> Type</th><th> Size</th><th> Usage</th><th> Free</th> </tr>
+			      {% for pool in storages %}
+			      <tr><td>{{ pool.name }}</td>
+			      <td>
+			      <div class='progress'>
+                  <div class="progress-bar progress-bar-danger" role="progressbar" style="width: {{ pool.percent }}%" aria-valuenow=" {{ pool.percent }} " aria-valuemin="0" aria-valuemax="100">{{ pool.percent }}%</div>
+		              </div>
+			      </td>
+			      <td>{{ pool.type|upper }}</td><td> {{ pool.size }} </td><td> {{ pool.used }}</td><td>{{ pool.sfree }}</td></tr>
+			       {% endfor %}
+	              </table>
+		  </div>             
+		</div>
+              <div class="card-footer">
+              </div>
+            </div>
+          </div>
+
+{% include 'sidebar_close.html' %}
 {% endblock %}

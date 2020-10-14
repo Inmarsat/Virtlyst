@@ -19,6 +19,11 @@
 #include "lib/connection.h"
 #include "virtlyst.h"
 
+//#include "storages.h"
+
+#include "lib/storagepool.h"
+#include <Cutelyst/Plugins/Authentication/authentication.h>
+
 #include <QLoggingCategory>
 
 Overview::Overview(Virtlyst *parent) : Controller(parent)
@@ -29,8 +34,16 @@ Overview::Overview(Virtlyst *parent) : Controller(parent)
 
 void Overview::index(Context *c, const QString &hostId)
 {
+qDebug() << __PRETTY_FUNCTION__;
+    if (m_virtlyst->servers(c).count() == 1 )
+         c->setStash(QStringLiteral("vesselname"), QVariant::fromValue(m_virtlyst->servers(c)[0]->vesselname));
+
     c->setStash(QStringLiteral("template"), QStringLiteral("hostdetail.html"));
     c->setStash(QStringLiteral("host_id"), hostId);
+
+    auto user = Authentication::user(c);
+    user.setId(user.value("username").toString());
+    c->setStash(QStringLiteral("user"), user.value("username").toString());
 
     Connection *conn = m_virtlyst->connection(hostId, c);
     if (conn == nullptr) {
@@ -38,5 +51,10 @@ void Overview::index(Context *c, const QString &hostId)
         c->response()->redirect(c->uriForAction(QStringLiteral("/index")));
         return;
     }
+
     c->setStash(QStringLiteral("host"), QVariant::fromValue(conn));
+
+    const QVector<StoragePool *> storages = conn->storagePools(0, c);
+    c->setStash(QStringLiteral("storages"), QVariant::fromValue(storages));
+
 }
