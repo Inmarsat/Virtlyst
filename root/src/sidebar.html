@@ -16,19 +16,11 @@
             </li>
             <li>
                 <a href="/storages/{{ host_id }}"
-                   class="list{% if c.namespace == 'storages' %} selected{% endif %}">{% i18n "Storages" %}</a>
+                   class="list{% if c.namespace == 'storages' %} selected{% endif %}">{% i18n "Storage" %}</a>
             </li>
             <li>
                 <a href="/networks/{{ host_id }}"
                    class="list{% if c.namespace == 'networks' %} selected{% endif %}">{% i18n "Networks" %}</a>
-            </li>
-            <li>
-                <a href="/interfaces/{{ host_id }}"
-                   class="list{% if c.namespace == 'interfaces' %} selected{% endif %}">{% i18n "Interfaces" %}</a>
-            </li>
-            <li>
-                <a href="/secrets/{{ host_id }}"
-                   class="list{% if c.namespace == 'secrets' %} selected{% endif %}">{% i18n "Secrets" %}</a>
             </li>
             <li>
                 <a href="/overview/{{ host_id }}"

@@ -8,22 +8,22 @@ set(Virtlyst_SRCS
 # Create the application
 add_library(Virtlyst SHARED ${Virtlyst_SRCS})
 
-# Make sure we link with libvirt installed in weird places, cough macos
-target_include_directories(Virtlyst PRIVATE ${LIBVIRT_LIBRARY_DIRS})
-
 # Link to Cutelyst
 target_link_libraries(Virtlyst
     Cutelyst::Core
-    Cutelyst::View::Grantlee
+    Cutelyst::View::Cutelee
     Cutelyst::Utils::Sql
     Cutelyst::Authentication
     Cutelyst::StatusMessage
     Cutelyst::Session
-    Grantlee5::Templates
+    Cutelee5::Templates
+    Cutelyst::CSRFProtection
     Qt5::Core
     Qt5::Network
     Qt5::Sql
     Qt5::Xml
     ${LIBVIRT_LIBRARIES}
+    ${LIBSSH_LIBRARIES}
 )
 
+install(TARGETS Virtlyst DESTINATION Virtlyst )

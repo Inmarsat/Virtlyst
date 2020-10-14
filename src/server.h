@@ -34,9 +34,8 @@ public:
     void index(Context *c);
 
 private:
-    void createServer(int type, const QString &name, const QString &hostname, const QString &login, const QString &password);
-    void updateServer(int id, const QString &name, const QString &hostname, const QString &login, const QString &password);
-    void deleteServer(int id);
+    void updateName(const QString &id, const QString &name);
+    void deleteServer(const QString &id);
 
     Virtlyst *m_virtlyst;
 };

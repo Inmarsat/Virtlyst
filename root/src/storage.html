@@ -47,7 +47,7 @@
                 <tr>
                     <td>{% i18n "State" %}</td>
                     <td>
-                        <form action="" method="post" role="form">{{ csrf_token }}
+                        <form action="" method="post" role="form">{% c_csrf_token %}
                             {% if storage.state == 0 %}
                                 <input type="submit" class="btn btn-xs btn-default" name="start" value="{% i18n "Start" %}">
                                 <input type="submit" class="btn btn-xs btn-default" name="delete" value="{% i18n "Delete" %}"
@@ -62,7 +62,7 @@
                 <tr>
                     <td>{% i18n "Autostart" %}</td>
                     <td>
-                        <form action="" method="post" role="form">{{ csrf_token }}
+                        <form action="" method="post" role="form">{% c_csrf_token %}
                             {% if not storage.autostart %}
                                 <input type="submit" class="btn btn-xs btn-default" name="set_autostart"
                                        value="{% i18n "Enable" %}">
@@ -76,7 +76,7 @@
             </tbody>
         </table>
         {% if storage.state != 0 %}
-            {% if storage.type == "iso" %}
+            {% if storage.name == "iso_images" %}
                 <h3>{% i18n "Images" %}</h3>
                 <hr>
                 {% if storage.state != 0 %}
@@ -104,7 +104,7 @@
                                         <td style="width:65px;">{{ volume.size }}<!--|filesizeformat--></td>
                                         <td>{{ volume.type }}</td>
                                         <td style="width:30px;">
-                                            <form action="" method="post" role="form">{{ csrf_token }}
+                                            <form action="" method="post" role="form">{% c_csrf_token %}
                                                 <input type="hidden" name="volname" value="{{ volume.name }}">
                                                 {% if volume.usedby != "" %}
                                                 <input type="submit" class="btn btn-sm btn-danger disabled" name="del_volume"
@@ -131,7 +131,8 @@
                 <h3>{% i18n "Volumes" %}</h3>
                 <hr>
                 {% if storage.state != 0 %}
-                    <a href="#AddImage" class="btn btn-success" data-toggle="modal">{% i18n "Add Image" %}</a><br><br>
+		<!--<a href="#AddImage" class="btn btn-success" data-toggle="modal">{% i18n "Add Image" %}</a>-->
+                    <a href="#IsoUpload" class="btn btn-success" data-toggle="modal">{% i18n "Upload Image" %}</a><br><br>
                 {% endif %}
 
                 {% if storage.volumes.size %}
@@ -166,7 +167,7 @@
                                                         <h4 class="modal-title">{% i18n "Clone image" %} <span
                                                                 class="label label-danger">{{ volume.name }}</span></h4>
                                                     </div>
-                                                    <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                                                    <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                                                         <div class="form-group">
                                                             <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -194,7 +195,6 @@
                                                                     <option value="raw">{% i18n "raw" %}</option>
                                                                     <option value="qcow">{% i18n "qcow" %}</option>
                                                                     <option value="qcow2">{% i18n "qcow2" %}</option>
-                                                                    <option value="qed">{% i18n "qed" %}</option>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -227,7 +227,7 @@
                                         {% endif %}
                                     </td>
                                     <td style="width:30px;">
-                                        <form action="" method="post" style="height:10px" role="form">{{ csrf_token }}
+                                        <form action="" method="post" style="height:10px" role="form">{% c_csrf_token %}
                                             <input type="hidden" name="volname" value="{{ volume.name }}">
                                             {% if volume.usedby != "" %}
                                             <input type="submit" class="btn btn-sm btn-danger disabled" name="del_volume"
@@ -263,7 +263,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">{% i18n "Add New Image" %}</h4>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -279,7 +279,6 @@
                             <select name="format" class="form-control image-format">
                                 <option value="qcow2">{% i18n "qcow2" %}</option>
                                 <option value="qcow">{% i18n "qcow" %}</option>
-                                <option value="qed">{% i18n "qed" %}</option>
                                 <option value="raw">{% i18n "raw" %}</option>
                             </select>
                         </div>
@@ -318,14 +317,14 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title">{% i18n "Upload ISO Image" %}</h4>
+                    <h4 class="modal-title">{% i18n "Upload Image" %}</h4>
                 </div>
-                <form class="form-horizontal" enctype="multipart/form-data" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" enctype="multipart/form-data" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
                         <div class="col-sm-6">
-                            <input type="file" name="file" id="id_file">
+                            <input type="file" name="file" multiple id="id_file">
                         </div>
                     </div>
                     <div class="modal-footer">

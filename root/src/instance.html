@@ -41,7 +41,7 @@
                     {% endif %}
                 {% endif %}
                 {% if domain.status == 1 %}"label label-success">{% i18n "Running" %}{% endif %}
-                {% if domain.status == 3 %}"label label-warning">{% i18n "Suspend" %}{% endif %}
+                {% if domain.status == 3 %}"label label-warning">{% i18n "Suspended" %}{% endif %}
                             </span>
             {% else %}
                 {% i18n "None" %}
@@ -76,10 +76,10 @@
             <span class="glyphicon glyphicon-wrench"></span><br>{% i18n "Settings" %}
         </a>
         </li>
-        <li><a class="inst-btn" href="#migrate" data-toggle="tab">
+       <!-- <li><a class="inst-btn" href="#migrate" data-toggle="tab">
             <span class="glyphicon glyphicon-cloud-download"></span><br>{% i18n "Migrate" %}
         </a>
-        </li>
+       </li>-->
         <li><a class="inst-btn" href="#delete" data-toggle="tab">
             <span class="glyphicon glyphicon-trash"></span><br>{% i18n "Destroy" %}
         </a>
@@ -93,9 +93,9 @@
             <li><a href="#forceshutdown" data-toggle="tab">{% i18n "Force Shutdown" %}</a></li>
             <li><a href="#suspend" data-toggle="tab">{% i18n "Suspend" %}</a></li>
             {% endif %}
-            {% if domain.status != 5 or domain.hasManagedSaveImage == 1 %}
+            <!--{% if domain.status != 5 or domain.hasManagedSaveImage == 1 %}
             <li><a href="#managedsave" data-toggle="tab">{% i18n "Save" %}</a></li>
-            {% endif %}
+	    {% endif %}-->
         </ul>
         <div class="tab-content">
             <div class="tab-pane tab-inst active" id="shutdown">
@@ -105,7 +105,7 @@
                 <p>{% i18n "This action sends an ACPI shutdown signal to the instance." %}</p>
                 {% endif %}
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 5 %}
                         <button type="submit" name="start"
                                 class="btn btn-lg btn-primary pull-right">{% i18n "Start" %}</button>
@@ -125,7 +125,7 @@
             <div class="tab-pane tab-inst" id="forceshutdown">
                 <p>{% i18n "This action forcibly powers off the instance and may cause data corruption." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 1 %}
                         <button data-id="shutoff" type="submit" name="power" value="destroy"
                                 class="btn btn-lg btn-primary pull-right"
@@ -140,7 +140,7 @@
             <div class="tab-pane tab-inst" id="suspend">
                 <p>{% i18n "This action suspends or restores the instance." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 1 %}
                         <button data-id="shutoff" type="submit" name="suspend"
                                 class="btn btn-lg btn-primary pull-right"
@@ -154,11 +154,11 @@
                 <div class="clearfix"></div>
             </div>
             {% endif %}
-            {% if status != 5 or domain.hasManagedSaveImage == 1 %}
+            <!--{% if status != 5 or domain.hasManagedSaveImage == 1 %}
             <div class="tab-pane tab-inst" id="managedsave">
                 <p>{% i18n "This action saves the state of the instance." %}</p>
 
-                <form action="" method="post" role="form">{{ csrf_token }}
+                <form action="" method="post" role="form">{% c_csrf_token %}
                     {% if domain.status == 5 %}
                         <button data-id="shutoff" type="submit" name="start"
                                 class="btn btn-lg btn-primary pull-right">{% i18n "Start" %}</button>
@@ -179,7 +179,7 @@
                 </form>
                 <div class="clearfix"></div>
             </div>
-            {% endif %}
+	    {% endif %}-->
         </div>
     </div>
     <div class="tab-pane" id="access" style="margin-top: 20px">
@@ -216,9 +216,9 @@
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_type">
-                <p>{% i18n "To set console's type, shutdown the instance." %}</p>
+                <p>{% i18n "To set the console's type, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group" id="console_type_selection">
                         <label for="console_select_type" class="col-sm-2 control-label">{% i18n "Type" %}</label>
 
@@ -242,9 +242,9 @@
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_pass">
-                <p>{% i18n "To create console password, shutdown the instance." %}</p>
+                <p>{% i18n "To create the console password, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
                             <div class="checkbox">
@@ -288,9 +288,9 @@
                 <div class="clearfix"></div>
             </div>
             <div class="tab-pane tab-inst" id="console_keymap">
-                <p>{% i18n "To set console's keymap, shutdown the instance." %}</p>
+                <p>{% i18n "To set the console's keymap, shut down the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
                             <div class="checkbox">
@@ -327,7 +327,7 @@
     </div>
     <div class="tab-pane" id="settings" style="margin-top: 20px">
     <ul class="nav nav-tabs nav-btn-act" style="margin-top: 20px">
-        <li class="active"><a href="#instancesettings" data-toggle="tab">{% i18n "VCPU's and Memory" %}</a></li>
+        <li class="active"><a href="#instancesettings" data-toggle="tab">{% i18n "VCPUs and Memory" %}</a></li>
         <li><a href="#instancemedia" data-toggle="tab">{% i18n "Media" %}</a></li>
         <li><a href="#instancedevice" data-toggle="tab">{% i18n "Disks and Networks" %}</a></li>
         <li><a href="#instanceclone" data-toggle="tab">{% i18n "Clone" %}</a></li>
@@ -337,7 +337,7 @@
     <div class="tab-pane tab-inst active" id="instancesettings">
         <p style="font-weight:bold;">{% i18n "Description and Autostart" %}</p>
 
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-4 control-label" style="font-weight:normal;"> {% i18n "Autostart" %}</label>
 
@@ -352,7 +352,7 @@
                 </div>
             </div>
         </form>
-        <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-4 control-label" style="font-weight:normal;">{% i18n "Description" %}</label>
 
@@ -432,7 +432,7 @@
         <div class="clearfix"></div>
     </div>
     <div class="tab-pane tab-inst" id="instancemedia">
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             {% for cd in domain.media %}
                 <div class="form-group">
                     <label class="col-sm-3 control-label">{% i18n "CDROM" %} {{ forloop.counter }}</label>
@@ -506,7 +506,7 @@
     <div class="tab-pane tab-inst" id="instanceclone">
         <p style="font-weight:bold;">{% i18n "Create a clone" %}</p>
 
-        <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+        <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
             <div class="form-group">
                 <label class="col-sm-3 control-label" style="font-weight:normal;">{% i18n "Clone Name" %}</label>
 
@@ -563,7 +563,7 @@
                 <button type="button" class="btn btn-lg btn-primary pull-right disabled">{% i18n "Edit" %}</button>
             {% endif %}
         </div>
-        <form id="viewXMLform" class="form-horizontal" method="post" role="form" style="display: none">{{ csrf_token }}
+        <form id="viewXMLform" class="form-horizontal" method="post" role="form" style="display: none">{% c_csrf_token %}
             <textarea id="xmltextarea" name="inst_xml">{{ domain.xml }}</textarea>
             <button type="button" class="btn btn-lg btn-default"
                     onclick="javascript:$('#viewXMLpre').show();$('#viewXMLform').hide();">{% i18n "Close" %}</button>
@@ -582,7 +582,7 @@
             <div class="tab-pane tab-inst active" id="createsnapshot">
                 <p>{% i18n "To take a snapshot, shutdown the instance." %}</p>
 
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label for="snapshot" class="col-sm-2 control-label">{% i18n "Name" %}</label>
 
@@ -617,7 +617,7 @@
                                 <td><strong>{{ snap.name }}</strong></td>
                                 <td>{{ snap.date }}<!--|date:"M d H:i:s"--></td>
                                 <td style="width:30px;">
-                                    <form action="" method="post" style="height:10px" role="form">{{ csrf_token }}
+                                    <form action="" method="post" style="height:10px" role="form">{% c_csrf_token %}
                                         <input type="hidden" name="name" value="{{ snap.name }}">
                                         {% if domain.status == 5 %}
                                             <button type="submit" class="btn btn-sm btn-primary" name="revert_snapshot"
@@ -629,7 +629,7 @@
                                     </form>
                                 </td>
                                 <td style="width:30px;">
-                                    <form action="" method="post" role="form">{{ csrf_token }}
+                                    <form action="" method="post" role="form">{% c_csrf_token %}
                                         <input type="hidden" name="name" value="{{ snap.name }}">
                                         <button type="submit" class="btn btn-sm btn-danger" name="delete_snapshot"
                                                 onclick="return confirm('{% i18n "Are you sure?" %}')">{% i18n "Delete" %}</button>
@@ -698,7 +698,7 @@
                         <p style="margin: 10px -10px 0 0;">{{ compute.name }}</p>
                     </div>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Host migration" %}</label>
 
@@ -754,7 +754,7 @@
             <div class="tab-pane tab-inst active" id="destroy">
                 <p>{% i18n "Delete HDD image?" %}</p>
 
-                <form class="form-group" method="post" role="form">{{ csrf_token }}
+                <form class="form-group" method="post" role="form">{% c_csrf_token %}
                     <div class="checkbox" style="margin-left: 8px;">
                         <label>
                             <input type="checkbox" name="delete_disk" value="true">
@@ -959,6 +959,6 @@
                  window.location.reload()
              }
          })
-     }, 2000);
+     }, {{ time_refresh }});
 </script>
 {% endblock %}

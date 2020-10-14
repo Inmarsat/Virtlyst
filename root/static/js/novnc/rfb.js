@@ -120,7 +120,7 @@ var that           = {},  // Public API methods
 
     test_mode        = false,
 
-    def_con_timeout  = Websock_native ? 2 : 5,
+    def_con_timeout  = Websock_native ? 10 : 10,
 
     /* Mouse state */
     mouse_buttonMask = 0,
@@ -134,7 +134,7 @@ Util.conf_defaults(conf, that, defaults, [
     ['focusContainer',     'wo', 'dom', document, 'DOM element that captures keyboard input'],
 
     ['encrypt',            'rw', 'bool', false, 'Use TLS/SSL/wss encryption'],
-    ['true_color',         'rw', 'bool', true,  'Request true color pixel data'],
+    ['true_color',         'rw', 'bool', false,  'Request true color pixel data'],
     ['local_cursor',       'rw', 'bool', false, 'Request locally rendered cursor'],
     ['shared',             'rw', 'bool', true,  'Request shared mode'],
     ['view_only',          'rw', 'bool', false, 'Disable client mouse/keyboard'],
@@ -289,16 +289,24 @@ function constructor() {
 function connect() {
     Util.Debug(">> RFB.connect");
     var uri;
+    var loc_port = location.port;
+    var loc_hostname = location.hostname;
+
+    if(loc_port){
+	loc_port = ":" + loc_port;
+    }
     
     if (typeof UsingSocketIO !== "undefined") {
-        uri = "http://" + rfb_host + ":" + rfb_port + "/" + rfb_path;
+        //uri = "http://" + rfb_host + ":" + rfb_port + "/" + rfb_path;
+	uri = "http://" + loc_hostname + loc_port + "/" + rfb_path;
     } else {
         if (conf.encrypt) {
             uri = "wss://";
         } else {
             uri = "ws://";
         }
-        uri += rfb_host + ":" + rfb_port + "/" + rfb_path;
+        //uri += rfb_host + ":" + rfb_port + "/" + rfb_path;
+	uri += loc_hostname + loc_port + "/" + rfb_path;
     }
     Util.Info("connecting to " + uri);
     // TODO: make protocols a configurable
@@ -464,7 +472,7 @@ updateState = function(state, statusMsg) {
         
         connTimer = setTimeout(function () {
                 fail("Connect timeout");
-            }, conf.connectTimeout * 1000);
+            }, conf.connectTimeout * 1000000);
 
         init_vars();
         connect();

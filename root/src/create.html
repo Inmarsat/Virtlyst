@@ -91,7 +91,7 @@
                                                 <h4 class="modal-title">{% i18n "Create Virtual Machine" %}
                                                     ({{ flavor.label }})</h4>
                                             </div>
-                                            <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                                            <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                                                 <div class="form-group">
                                                     <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -143,7 +143,7 @@
 
                                                     <div class="col-sm-6">
                                                         <input type="text" class="form-control" name="mac" maxlength="17"
-                                                               value="{{ mac_auto }}" required pattern="[a-zA-Z0-9:]+">
+                                                               value="{{ mac_auto }}" required pattern="[a-fA-F0-9:]+">
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
@@ -179,7 +179,7 @@
                                    class="btn btn-sm btn-success">{% i18n "Create" %}</a>
                             </td>
                             <td style="width:5px;">
-                                <form class="form-horizontal" action="" method="post" role="form">{{ csrf_token }}
+                                <form class="form-horizontal" action="" method="post" role="form">{% c_csrf_token %}
                                     <input type="hidden" name="flavor" value="{{ flavor.id }}">
                                     <input type="submit" class="btn btn-sm btn-danger" name="delete_flavor"
                                            value="{% i18n "Delete" %}"
@@ -207,7 +207,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">{% i18n "Create Custom Instance" %}</h4>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -319,7 +319,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">{% i18n "Add New Flavor" %}</h4>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -374,7 +374,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">{% i18n "Create Instance From Template Image" %}</h4>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{% i18n "Name" %}</label>
 
@@ -485,7 +485,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">{% i18n "Create Instance From XML" %}</h4>
                 </div>
-                <form class="form-horizontal" method="post" role="form">{{ csrf_token }}
+                <form class="form-horizontal" method="post" role="form">{% c_csrf_token %}
                     <div class="form-group">
                         <div class="col-sm-12">
                             <textarea id="xmltextarea" name="from_xml"></textarea>

@@ -831,15 +831,15 @@ void Domain::mountIso(const QString &dev, const QString &image)
                 QTextStream s(&xml);
                 disk.save(s, 2);
                 bool ret = updateDevice(xml, VIR_DOMAIN_AFFECT_CONFIG);
-                qDebug() << "DISK update" << ret;
+                // qDebug() << "DISK update" << ret;
                 break;
             }
         }
         disk = disk.nextSiblingElement(QStringLiteral("disk"));
     }
-    qDebug() << 2 << image;
+//     qDebug() << 2 << image;
 
-    qDebug() << 2 << doc.toString(2).toUtf8().constData();
+//    qDebug() << 2 << doc.toString(2).toUtf8().constData();
 //    saveXml();
 }
 

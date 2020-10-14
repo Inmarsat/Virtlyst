@@ -1,7 +1,7 @@
 # Virtlyst
 Web interface to manage virtual machines with libvirt
 
-Don't let your virtualization management use more resources than your main virtualized needs.
+Don't let your virtualization management use more resources than you main virtualized needs.
 
  * Ideal for small deployments where simplicity is key to virtualization usage
  * Low memory footprint, around 5 MiB of RAM used
@@ -20,6 +20,3 @@ Don't let your virtualization management use more resources than your main virtu
     --static-map /static=root/static \
     --http-socket localhost:3000 \
     --master
-
-Default Username: admin
-Password: admin

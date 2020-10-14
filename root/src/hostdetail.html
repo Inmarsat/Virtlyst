@@ -12,44 +12,44 @@
             {% endfor %}
         {% endif %}
 
-        <h4>{% i18n "Basic details" %}</h4>
+	<h4><b>{% i18n "Basic details" %}</b></h4>
         <table class="table table-hover table-nolines">
             <tbody>
                 <tr>
-                    <td>{% i18n "Connection" %}</td>
+		    <td><b>{% i18n "Connection" %}</b></td>
                     <td>{{ host.uri }}</td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Hostname" %}</td>
+		    <td><b>{% i18n "Hostname" %}</b></td>
                     <td>{{ host.hostname }}</td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Hypervisor" %}</td>
+		    <td><b>{% i18n "Hypervisor" %}</b></td>
                     <td>{{ host.hypervisor }}</td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Memory" %}</td>
+		    <td><b>{% i18n "Memory" %}</b></td>
                     <td>{{ host.memoryPretty }}<!--|filesizeformat--></td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Logical CPUs" %}</td>
+		    <td><b>{% i18n "Logical CPUs" %}</b></td>
                     <td>{{ host.cpus }}</td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Processor" %}</td>
+		    <td><b>{% i18n "Processor" %}</b></td>
                     <td>{{ host.cpuVendor }} - {{ host.cpuModel }}</td>
                 </tr>
                 <tr>
-                    <td>{% i18n "Architecture" %}</td>
+		    <td><b>{% i18n "Architecture" %}</b></td>
                     <td>{{ host.cpuArch }}</td>
                 </tr>
             </tbody>
         </table>
 
-        <h4>{% i18n "Performance" %}</h4>
-        <p>{% i18n "CPU usage" %}</p>
+	<h4><b>{% i18n "Performance" %}</b></h4>
+	<p><b>{% i18n "CPU usage" %}</b></p>
         <canvas id="cpuChart" width="700" height="200"></canvas>
-        <p>{% i18n "Memory usage" %}</p>
+	<p><b>{% i18n "Memory usage" %}</b></p>
         <canvas id="memoryChart" width="700" height="200"></canvas>
     </div>
     {% include 'sidebar_close.html' %}

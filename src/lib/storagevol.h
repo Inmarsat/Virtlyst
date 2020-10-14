@@ -20,7 +20,7 @@
 
 #include <QObject>
 #include <QDomDocument>
-
+#include <Cutelyst/Upload>
 #include <libvirt/libvirt.h>
 
 class Domain;
@@ -44,6 +44,8 @@ public:
 
     bool undefine(int flags = 0);
     StorageVol *clone(const QString &name, const QString &format, int flags);
+
+    void upload(Cutelyst::Upload* upload);
 
     StoragePool *pool();
 

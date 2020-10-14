@@ -46,7 +46,7 @@
                 <tr>
                     <td>{% i18n "State" %}</td>
                     <td>
-                        <form action="" method="post" role="form">{{ csrf_token }}
+                        <form action="" method="post" role="form">{% c_csrf_token %}
                             {% if not iface.active %}
                                 <input type="submit" class="btn btn-xs btn-default" name="start" value="{% i18n "Start" %}">
                                 <input type="submit" class="btn btn-xs btn-default" name="delete" value="{% i18n "Delete" %}"

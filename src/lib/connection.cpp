@@ -35,6 +35,14 @@
 
 #include <QLoggingCategory>
 
+
+#include <Cutelyst/Plugins/StatusMessage>
+#include <Cutelyst/Plugins/Utils/Sql>
+
+#include <QSqlQuery>
+#include <QSqlError>
+
+
 Q_LOGGING_CATEGORY(VIRT_CONN, "virt.connection")
 
 static int authCreds[] = {
@@ -79,28 +87,31 @@ static int authCb(virConnectCredentialPtr cred, unsigned int ncred, void *cbdata
 
 Connection::Connection(virConnectPtr conn, QObject *parent) : QObject(parent), m_conn(conn)
 {
-    virConnectRef(conn);
+    if (conn != NULL) virConnectRef(conn);
 }
 
 Connection::Connection(const QUrl &url, const QString &name, QObject *parent) : QObject(parent)
 {
     setName(name);
 
-    const QString uri = url.toString(QUrl::RemovePassword);
-    qCDebug(VIRT_CONN) << "Connecting to" << uri;
-    QUrl localUrl(url);
-    virConnectAuth auth;
-    auth.credtype = authCreds;
-    auth.ncredtype = sizeof(authCreds)/sizeof(int);
-    auth.cb = authCb;
-    auth.cbdata = &localUrl;
+     const QString uri = url.toString(QUrl::RemovePassword);
+    // qCDebug(VIRT_CONN) << "Connecting to" << uri;
+    // QUrl localUrl(url);
+     virConnectAuth auth;
+    // auth.credtype = authCreds;
+    // auth.ncredtype = sizeof(authCreds)/sizeof(int);
+    // auth.cb = authCb;
+    // auth.cbdata = &localUrl;
 
-    m_conn = virConnectOpenAuth(uri.toUtf8().constData(), &auth, 0);
-    if (m_conn == NULL) {
-        qCWarning(VIRT_CONN) << "Failed to open connection to" << url;
-        return;
-    }
-    qCDebug(VIRT_CONN) << "Connected to" << uri;
+    m_conn = nullptr;
+    //m_conn = virConnectOpenAuth(uri.toUtf8().constData(), &auth, 0);
+    // if (m_conn == NULL) {
+    //     qCWarning(VIRT_CONN) << "Failed to open connection to" << url;
+    //     return;
+    // }
+
+
+    //qCDebug(VIRT_CONN) << "Connected to" << uri;
 }
 
 Connection::~Connection()
@@ -191,12 +202,13 @@ uint Connection::cpus()
 
 bool Connection::isAlive()
 {
-    if (m_conn) {
-        // This is will still return true when the connection
-        // closed but no request has been made
-        return virConnectIsAlive(m_conn) == 1;
-    }
-    return false;
+
+    // if (m_conn) {
+    //     // This is will still return true when the connection
+    //     // closed but no request has been made
+    //     return virConnectIsAlive(m_conn) == 1;
+    // }
+    return true;
 }
 
 int Connection::maxVcpus() const
@@ -440,7 +452,11 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
 
     stream.writeEmptyElement(QStringLiteral("boot"));
     stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("cdrom"));
-    stream.writeEndElement(); // os
+
+    // andreas
+    stream.writeEmptyElement(QStringLiteral("bootmenu"));
+    stream.writeAttribute(QStringLiteral("enable"), QStringLiteral("yes"));
+    stream.writeEndElement(); // boot menu
 
     stream.writeStartElement(QStringLiteral("features"));
     stream.writeEmptyElement(QStringLiteral("acpi"));
@@ -509,13 +525,17 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
 
             stream.writeEndElement(); // disk
         }
-
+	qDebug() << networks;
         for (const QString &network : networks) {
             stream.writeStartElement(QStringLiteral("interface"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("network"));
 
             stream.writeEmptyElement(QStringLiteral("source"));
             stream.writeAttribute(QStringLiteral("network"), network);
+
+           // stream.writeEmptyElement(QStringLiteral("mac"));
+           // stream.writeAttribute(QStringLiteral("address"), QStringLiteral("mac"));
+   
 
             if (virtIO) {
                 stream.writeEmptyElement(QStringLiteral("model"));
@@ -525,12 +545,13 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
             stream.writeEndElement(); // interface
         }
 
-        stream.writeStartElement(QStringLiteral("disk"));
-        stream.writeAttribute(QStringLiteral("type"), QStringLiteral("file"));
-        stream.writeAttribute(QStringLiteral("device"), QStringLiteral("cdrom"));
-        {
-
-            stream.writeEmptyElement(QStringLiteral("driver"));
+        for(int i=1; i<=2; i++)
+	{
+            stream.writeStartElement(QStringLiteral("disk"));
+            stream.writeAttribute(QStringLiteral("type"), QStringLiteral("file"));
+            stream.writeAttribute(QStringLiteral("device"), QStringLiteral("cdrom"));
+            
+	    stream.writeEmptyElement(QStringLiteral("driver"));
             stream.writeAttribute(QStringLiteral("name"), QStringLiteral("qemu"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("raw"));
 
@@ -538,19 +559,24 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
             stream.writeAttribute(QStringLiteral("file"), QStringLiteral(""));
 
             stream.writeEmptyElement(QStringLiteral("target"));
-            stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hda"));
+	    if ( i == 1 )
+                 stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hda"));
+	    else	 
+                 stream.writeAttribute(QStringLiteral("dev"), QStringLiteral("hdb"));
             stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("ide"));
 
             stream.writeEmptyElement(QStringLiteral("readonly"));
 
-            stream.writeEmptyElement(QStringLiteral("address"));
+            /* stream.writeEmptyElement(QStringLiteral("address"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("drive"));
             stream.writeAttribute(QStringLiteral("controller"), QStringLiteral("0"));
             stream.writeAttribute(QStringLiteral("bus"), QStringLiteral("1"));
             stream.writeAttribute(QStringLiteral("target"), QStringLiteral("0"));
             stream.writeAttribute(QStringLiteral("unit"), QStringLiteral("1"));
+	    */
+        
+	    stream.writeEndElement(); // disk
         }
-        stream.writeEndElement(); // disk
 
         stream.writeEmptyElement(QStringLiteral("input"));
         stream.writeAttribute(QStringLiteral("type"), QStringLiteral("mouse"));
@@ -564,11 +590,13 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
         stream.writeAttribute(QStringLiteral("type"), consoleType);
         stream.writeAttribute(QStringLiteral("port"), QStringLiteral("-1"));
         stream.writeAttribute(QStringLiteral("autoport"), QStringLiteral("yes"));
-        stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("127.0.0.1"));
+        // stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("127.0.0.1"));
+        stream.writeAttribute(QStringLiteral("listen"), QStringLiteral("0.0.0.0"));
         {
             stream.writeEmptyElement(QStringLiteral("listen"));
             stream.writeAttribute(QStringLiteral("type"), QStringLiteral("address"));
-            stream.writeAttribute(QStringLiteral("address"), QStringLiteral("127.0.0.1"));
+            // stream.writeAttribute(QStringLiteral("address"), QStringLiteral("127.0.0.1"));
+            stream.writeAttribute(QStringLiteral("address"), QStringLiteral("0.0.0.0"));
         }
         stream.writeEndElement(); // graphics
 
@@ -589,7 +617,8 @@ bool Connection::createDomain(const QString &name, const QString &memory, const 
     stream.writeEndElement(); // devices
 
     stream.writeEndElement(); // domain
-    qCDebug(VIRT_CONN) << "XML output" << output.constData();
+//    qDebug() << "XML output" << output.constData();
+    qCDebug(VIRT_CONN) << "XML output" << output;
     return domainDefineXml(QString::fromUtf8(output));
 }
 
@@ -728,6 +757,7 @@ bool Connection::createInterface(const QString &name, const QString &netdev, con
     }
 
     stream.writeEndElement(); // interface
+    // qDebug() << "XML output" << output;
     qCDebug(VIRT_CONN) << "XML output" << output;
 
     virInterfacePtr iface = virInterfaceDefineXML(m_conn, output.constData(), 0);
@@ -810,6 +840,7 @@ bool Connection::createNetwork(const QString &name, const QString &forward, cons
     }
 
     stream.writeEndElement(); // network
+    // qDebug() << "XML output" << output;
     qCDebug(VIRT_CONN) << "XML output" << output;
     virNetworkPtr net = virNetworkDefineXML(m_conn, output.constData());
     if (net) {
@@ -859,6 +890,7 @@ bool Connection::createSecret(const QString &ephemeral, const QString &usageType
     stream.writeEndElement(); // usage
 
     stream.writeEndElement(); // secret
+    //qDebug() << "XML output" << output;
     qDebug(VIRT_CONN) << "XML output" << output;
 //    xml.appendChild();
     virSecretPtr secret = virSecretDefineXML(m_conn, output.constData(), 0);
@@ -939,11 +971,13 @@ bool Connection::createStoragePool(const QString &name, const QString &type, con
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // pool
-//    qDebug(VIRT_CONN) << "XML output" << output;
+//    qDebug() << "XML output" << output;
+//  qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -987,11 +1021,13 @@ bool Connection::createStoragePoolCeph(const QString &name, const QString &ceph_
     stream.writeEndElement(); // source
 
     stream.writeEndElement(); // pool
+    // qDebug() << "XML output" << output;
     qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -1031,11 +1067,13 @@ bool Connection::createStoragePoolNetFs(const QString &name, const QString &netf
     stream.writeEndElement(); // target
 
     stream.writeEndElement(); // pool
+    //qDebug() << "XML output" << output;
     qDebug(VIRT_CONN) << "XML output" << output;
 
     virStoragePoolPtr pool = virStoragePoolDefineXML(m_conn, output.constData(), 0);
     if (!pool) {
-        qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
+        // qDebug() << "virStoragePoolDefineXML" << output;
+	qDebug(VIRT_CONN) << "virStoragePoolDefineXML" << output;
         return false;
     }
 
@@ -1108,7 +1146,8 @@ bool Connection::loadDomainCapabilities()
         return false;
     }
     const QString xmlString = QString::fromUtf8(xml);
-//    qDebug(VIRT_CONN) << "Caps" << xml;
+//    qDebug() << "Caps" << xml;
+//  qDebug(VIRT_CONN) << "Caps" << xml; 
     free(xml);
 
     QString errorString;
@@ -1118,6 +1157,7 @@ bool Connection::loadDomainCapabilities()
     }
 
     m_domainCapabilitiesLoaded = true;
+    // qDebug() << "kvmSupported" << kvmSupported();
     qDebug(VIRT_CONN) << "kvmSupported" << kvmSupported();
     return true;
 }

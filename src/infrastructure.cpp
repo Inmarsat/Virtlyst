@@ -47,12 +47,18 @@ void Infrastructure::index(Context *c)
         }
 
         double freeMemory = conn->freeMemoryBytes() / 1024;// To KibiBytes
-        double difference = freeMemory / conn->memory();
+        double difference = 0;
+	if (conn->memory()) {
+            difference = freeMemory / conn->memory();
+	}
 
         const QVector<Domain *> domains = conn->domains(
                     VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_INACTIVE, c);
         for (Domain *domain : domains) {
-            double difference = double(domain->memory()) / conn->memory();
+            double difference = 0;
+	    if (conn->memory()) {
+                difference = double(domain->memory()) / conn->memory();
+	    }
             domain->setProperty("mem_usage", QString::number(difference * 100, 'g', 3));
         }
 

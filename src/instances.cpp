@@ -70,7 +70,6 @@ void Instances::index(Context *c, const QString &hostId)
             c->response()->redirect(c->uriFor(CActionFor("index"), QStringList{ hostId }));
         }
     }
-
     const QVector<Domain *> domains = conn->domains(
                 VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_INACTIVE, c);
     c->setStash(QStringLiteral("instances"), QVariant::fromValue(domains));
@@ -82,6 +81,7 @@ void Instances::instance(Context *c, const QString &hostId, const QString &name)
     QStringList errors;
     c->setStash(QStringLiteral("template"), QStringLiteral("instance.html"));
     c->setStash(QStringLiteral("host_id"), hostId);
+    QMap<QString, QString>::const_iterator pos; 
 
     Connection *conn = m_virtlyst->connection(hostId, c);
     if (conn == nullptr) {
@@ -209,7 +209,16 @@ void Instances::instance(Context *c, const QString &hostId, const QString &name)
             redir = true;
         } else if (params.contains(QStringLiteral("mount_iso"))) {
             const QString dev = params.value(QStringLiteral("mount_iso"));
-            const QString image = params.value(QStringLiteral("media"));
+            QString image1,image2,image ;
+	    pos=params.constBegin();
+            image1=pos.value();
+	    ++pos;
+	    image2=pos.value();
+            if (dev == "hdb")
+	          image = image1;
+	    else
+	          image = image2;
+
             dom->mountIso(dev, image);
             redir = true;
         } else if (params.contains(QStringLiteral("umount_iso"))) {

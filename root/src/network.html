@@ -25,7 +25,7 @@
                     <tr>
                         <td>{% i18n "State" %}</td>
                         <td>
-                            <form action="" method="post" role="form">{{ csrf_token }}
+                            <form action="" method="post" role="form">{% c_csrf_token %}
                                 {% if not network.active %}
                                     <input type="submit" class="btn btn-xs btn-default" name="start"
                                            value="{% i18n "Start" %}">
@@ -41,7 +41,7 @@
                     <tr>
                         <td>{% i18n "Autostart" %}</td>
                         <td>
-                            <form action="" method="post" role="form">{{ csrf_token }}
+                            <form action="" method="post" role="form">{% c_csrf_token %}
                                 {% if not network.autostart %}
                                     <input type="submit" class="btn btn-xs btn-default" name="set_autostart"
                                            value="{% i18n "Enable" %}">

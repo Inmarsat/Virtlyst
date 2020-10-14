@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="row">
-  <div class="col">
-    <a class="btn btn-primary" href="/users/create" role="button">New</a>
+  <div class="pull-right">
+	  <a class="btn btn-primary" href="/users/create" role="button">Add User</a>
   </div>
 </div>
 
@@ -13,19 +13,26 @@
     <tr>
       <th scope="col">#</th>
       <th scope="col">Username</th>
-      <th scope="col">Actions</th>
+      <th scope="col" style="text-align:center;width: 300px;">Actions</th>
     </tr>
   </thead>
   <tbody>
-    {% for user in users %}
+    {% for usr in users %}
     <tr>
       <th scope="row">{{ forloop.counter }}</th>
-      <td>{{ user.1 }}</td>
+      <td>{{ usr.1 }}</td>
       </td>
+      {% if usr.1 == "admin" %}
       <td>
-        <a role="button" class="btn btn-primary btn-sm" href="/users/edit/{{ user.0 }}">Edit</a>
-        <a role="button" class="btn btn-primary btn-sm" href="/users/change_password/{{ user.0 }}">Change Password</a>
+        <a role="button" class="btn btn-primary btn-sm" href="/users/change_password/{{ usr.0 }}">Change Password</a>
+        <a role="button" class="btn btn-primary btn-sm disabled">Delete</a>
       </td>
+      {% else %}
+      <td>
+        <a role="button" class="btn btn-primary btn-sm" href="/users/change_password/{{ usr.0 }}">Change Password</a>
+        <a role="button" class="btn btn-primary btn-sm" href="/users/delete_user/{{ usr.0 }}" onclick="return confirm('Are you sure want to delete?')">Delete</a>
+      </td>
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>

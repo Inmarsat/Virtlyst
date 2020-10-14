@@ -22,7 +22,7 @@
 #include "lib/storagevol.h"
 
 #include "virtlyst.h"
-
+#include <Cutelyst/Upload>
 #include <QLoggingCategory>
 
 Storages::Storages(Virtlyst *parent) : Controller(parent)
@@ -143,6 +143,23 @@ void Storages::storage(Context *c, const QString &hostId, const QString &pool)
             StorageVol *vol = storage->getVolume(name);
             if (vol) {
                 vol->undefine();
+            }
+        } else if (params.contains(QStringLiteral("iso_upload"))) {
+          qDebug() << "iso_upload";
+            const auto uploads = c->request()->uploads();
+
+            for (auto upload : uploads) {
+              if (upload->filename().isEmpty())
+                continue;
+              auto vol = storage->getVolume(upload->filename());
+              if (!vol) {
+                qDebug() << "create storage volume: " << upload->filename();
+                  vol = storage->createStorageVolume(upload->filename(),
+                                                     QStringLiteral("raw"),
+                                                     0,
+                                                     0);
+              }
+              vol->upload(upload);
             }
         } else if (params.contains(QStringLiteral("cln_volume"))) {
             QString imageName = params[QStringLiteral("name")] + QLatin1String(".img");

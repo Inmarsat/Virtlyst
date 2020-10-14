@@ -42,13 +42,13 @@
                                     {% endif %}
                                 {% endif %}
                                 {% if inst.status == 3 %}
-                                    <span class="label label-warning">{% i18n "Suspend" %}</span>
+                                    <span class="label label-warning">{% i18n "Suspended" %}</span>
                                 {% endif %}
                             </td>
                             <td>{{ inst.vcpu }}</td>
                             <td>{{ inst.currentMemoryPretty }}</td>
                             <td>
-                                <form action="" method="post" role="form">{{ csrf_token }}
+                                <form action="" method="post" role="form">{% c_csrf_token %}
                                     <input type="hidden" name="name" value="{{ inst.name }}"/>
                                     {% if inst.status == 5 %}
                                         <button class="btn btn-sm btn-default" type="submit" name="start" title="Start">
@@ -57,10 +57,10 @@
                                         <button class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
                                             <span class="glyphicon glyphicon-pause"></span>
                                         </button>
-                                        <button class="btn btn-sm btn-default disabled" title="{% i18n "Save" %}">
+                                        <!--<button class="btn btn-sm btn-default disabled" title="{% i18n "Save" %}">
                                             <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
-                                        {% if inst.has_managed_save_image == 1 %}
+					</button>
+					{% if inst.has_managed_save_image == 1 %}
                                             <button class="btn btn-sm btn-default" type="submit" name="deletesaveimage"
                                                     title="{% i18n "Delete Save Image" %}"
                                                     onclick='return confirm('Are you sure?')'>
@@ -70,7 +70,10 @@
                                             <button class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
                                                 <span class="glyphicon glyphicon-off"></span>
                                             </button>
-                                        {% endif %}
+					    {% endif %}-->
+					<button class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
+                                                <span class="glyphicon glyphicon-off"></span>
+                                        </button>
                                         <button class="btn btn-sm btn-default disabled"
                                                 title="{% i18n "Force Shutdown" %}">
                                             <span class="glyphicon glyphicon-stop"></span>
@@ -87,10 +90,10 @@
                                         <button class="btn btn-sm btn-default disabled" title="{% i18n "Suspend" %}">
                                             <span class="glyphicon glyphicon-pause"></span>
                                         </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="managedsave"
+                                        <!--<button class="btn btn-sm btn-default" type="submit" name="managedsave"
                                                 title="{% i18n "Save" %}">
                                             <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
+					</button>-->
                                         <button class="btn btn-sm btn-default disabled" title="{% i18n "Shutdown" %}">
                                             <span class="glyphicon glyphicon-off"></span>
                                         </button>
@@ -111,11 +114,11 @@
                                                 onclick="return confirm('Are you sure?')">
                                             <span class="glyphicon glyphicon-pause"></span>
                                         </button>
-                                        <button class="btn btn-sm btn-default" type="submit" name="managedsave"
+                                        <!--<button class="btn btn-sm btn-default" type="submit" name="managedsave"
                                                 title="{% i18n "Save" %}"
                                                 onclick="return confirm('Are you sure?')">
                                             <span class="glyphicon glyphicon-download-alt"></span>
-                                        </button>
+					</button>-->
                                         <button class="btn btn-sm btn-default" type="submit" name="shutdown"
                                                 title="{% i18n "Shutdown" %}"
                                                 onclick="return confirm('Are you sure?')">
@@ -167,16 +170,13 @@
                                 + "<td>" + data[i]['vcpu'] + "</td>"
                                 + "<td>" + data[i]['memory'] + "</td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
+                                + "<form action='' method='post'>{% c_csrf_token %}"
                                 + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
                                 + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Start" %}'>"
                                 + "<span class='glyphicon glyphicon-play'></span>"
                                 + "</button> "
                                 + "<button class='btn btn-sm btn-default' type='submit' name='suspend' title='{% i18n "Suspend" %}' onclick='return confirm('Are you sure?')'>"
                                 + "<span class='glyphicon glyphicon-pause'></span>"
-                                + "</button> "
-                                + "<button class='btn btn-sm btn-default' type='submit' name='managedsave' title='{% i18n "Save" %}' onclick='return confirm('Are you sure?')'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
                                 + "</button> "
                                 + btn
                                 + "<button class='btn btn-sm btn-default' type='submit' name='destroy' title='{% i18n "Force Shutdown" %}' onclick='return confirm('Are you sure?')'>"
@@ -190,20 +190,17 @@
                     }
                     if (data[i]['status'] === 3) {
                         $(elem).html("<td><a href='/instances/{{ host_id }}/" + data[i]['name'] + "'><i class='icon-th-large'></i> " + data[i]['name'] + "</a></td>"
-                                + "<td><span class='label label-warning'>{% i18n "Suspend" %}</span></td>"
+                                + "<td><span class='label label-warning'>{% i18n "Suspended" %}</span></td>"
                                 + "<td>" + data[i]['vcpu'] + "</td>"
                                 + "<td>" + data[i]['memory'] + "</td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
+                                + "<form action='' method='post'>{% c_csrf_token %}"
                                 + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
                                 + "<button class='btn btn-sm btn-default' type='submit' name='resume' title='{% i18n "Resume" %}'>"
                                 + "<span class='glyphicon glyphicon-play'></span>"
                                 + "</button> "
                                 + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
                                 + "<span class='glyphicon glyphicon-pause'></span>"
-                                + "</button> "
-                                + "<button class='btn btn-sm btn-default' type='submit' name='managedsave' title='{% i18n "Save" %}'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
                                 + "</button> "
                                 + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
                                 + "<span class='glyphicon glyphicon-off''></span>"
@@ -223,16 +220,13 @@
                                 + "<td>" + data[i]['vcpu'] + "</td>"
                                 + "<td>" + data[i]['memory'] + "</td>"
                                 + "<td>"
-                                + "<form action='' method='post'>{{ csrf_token }}"
+                                + "<form action='' method='post'>{% c_csrf_token %}"
                                 + "<input type='hidden' name='name' value='" + data[i]['name'] + "' />"
                                 + "<button class='btn btn-sm btn-default' type='submit' name='start' title='{% i18n "Start" %}'>"
                                 + "<span class='glyphicon glyphicon-play'></span>"
                                 + "</button> "
                                 + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Suspend" %}'>"
                                 + "<span class='glyphicon glyphicon-pause'></span>"
-                                + "</button> "
-                                + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Save" %}'>"
-                                + "<span class='glyphicon glyphicon-download-alt'></span>"
                                 + "</button> "
                                 + "<button class='btn btn-sm btn-default disabled' title='{% i18n "Shutdown" %}'>"
                                 + "<span class='glyphicon glyphicon-off'></span>"

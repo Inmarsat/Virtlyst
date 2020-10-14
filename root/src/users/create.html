@@ -1,18 +1,47 @@
 {% extends "base.html" %}
-{% block title %}{% i18n "Create User" %}{% endblock %}
-
+{% block title %}
+{% if not user_edit %}
+{% i18n "Create User" %}
+{% else %}
+{% i18n "Edit User" %}
+{% endif %}
+{% endblock %}
 {% block content %}
-<form method="post">
-  <div class="form-group">
-    <label for="username">Username</label>
-    <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required autocomplete="username">
-  </div>
-  {% if not user_edit %}
-  <div class="form-group">
-    <label for="password">Password</label>
-    <input type="password" class="form-control" id="password" name="password" required>
-  </div>
-  {% endif %}
-  <button type="submit" class="btn btn-primary">{% if user_edit %}Edit{% else %}Create{% endif %}</button>
-</form>
+<div class="row">
+	  <div class="col-xs-12">
+	      {% if error_msg %}
+        <div class="alert alert-danger">
+			      {{ error_msg }}
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+        </div>
+        {% endif %}
+	      <form class="form-signin" method="post" onsubmit="return checkPassword(this)">
+	      {% c_csrf_token %}
+	          <h2 class="modal-title">
+	              {% if not user_edit %}
+	              {% i18n "Create User" %}
+	              {% else %}
+                {% i18n "Edit User" %}
+	              {% endif %}
+	          </h2>
+	          <div>
+	              <label for="username">Username</label>
+	              <input type="text" class="form-control" id="username" name="username" value="{{ curuser.username }}" required autocomplete="username">
+	          </div>
+	          {% if not user_edit %}
+	          <div>
+	              <label for="password">Password</label>
+	              <input type="password" class="form-control" id="password" name="password" autocomplete="off" required>
+	          </div>
+	          <div>
+	              <label for="password_conf">Password Confirmation</label>
+	              <input type="password" class="form-control" id="password_conf" name="password_conf" autocomplete="off" required>
+	          </div>
+	          {% endif %}
+	          <div class="form-model-footer">
+	              <button type="submit" class="btn btn-primary">{% if user_edit %}Edit{% else %}Create{% endif %}</button>
+	          </div>
+	      </form>
+	  </div>
+</div>
 {% endblock %}

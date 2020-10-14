@@ -42,6 +42,9 @@ public:
     C_ATTR(defaultPage, :Path)
     void defaultPage(Context *c);
 
+    C_ATTR(csrfdenied, :Local :Private :AutoArgs :ActionClass("RenderView"))
+    void csrfdenied(Context *c);
+
 private Q_SLOTS:
     bool Auto(Context *c);
 

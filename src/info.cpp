@@ -110,7 +110,6 @@ void Info::insts_status(Context *c, const QString &hostId)
     }
 
     QJsonArray vms;
-
     const QVector<Domain *> domains = conn->domains(
                 VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_INACTIVE, c);
     for (Domain *domain : domains) {
