@@ -42,13 +42,13 @@
        <li class="sidebaritem">
        <!-- span> {% i18n  "CPU" %} </span -->
        <div class="progress">
-                  <div id="prog_cpu" class="progress-bar  progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100" title="Total CPU usage"></div>
+                  <div id="prog_cpu" class="progress-bar  progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100" title="Fleet Compute Host CPU Usage"></div>
        </div>
        </li>
        <li class="sidebaritem">
        <!-- span> {% i18n  "Memory" %} </span -->
        <div class="progress">
-                  <div id="prog_mem" class="progress-bar progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100" title="Total memory usage"></div>
+                  <div id="prog_mem" class="progress-bar progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100" title="Fleet Compute Host Memory Usage"></div>
        </div>	  
        </li>
        <hr>
@@ -62,11 +62,11 @@ google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawChart);
    
 window.addEventListener("load", function(){
-host_lastCpusUsage=JSON.parse(localStorage.getItem('host_lastCpusUsage'));
-host_lastMemUsage=JSON.parse(localStorage.getItem('host_lastMemUsage'));
+    const host_lastCpusUsage = JSON.parse(localStorage.getItem('host_lastCpusUsage'));
+    const host_lastMemUsage = JSON.parse(localStorage.getItem('host_lastMemUsage'));
 
 
-$("#prog_cpu").css("width", host_lastCpusUsage + "%")
+    $("#prog_cpu").css("width", host_lastCpusUsage + "%")
  	                     .attr("aria-valuenow", host_lastCpusUsage)
  			     .text("CPU:" + host_lastCpusUsage + "%");
 
