@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <syslog.h>
+#include <algorithm>
 #include "lib/connection.h"
 #include "infrastructure.h"
 #include "instances.h"
@@ -229,6 +230,9 @@ QVector<ServerConn *> Virtlyst::servers(QObject *parent)
         ret.append(conn);
         ++it;
     }
+    std::sort(ret.begin(), ret.end(), [](ServerConn *a, ServerConn *b){
+        return a->vesselname.compare(b->vesselname);
+    });
     return ret;
 }
 
@@ -324,7 +328,7 @@ QStringList Virtlyst::keymaps()
 void Virtlyst::updateConnections()
 {
     QSqlQuery query = CPreparedSqlQueryThreadForDB(
-        QStringLiteral("SELECT id, name, vessel_name, hostname, type, customer_number,version FROM servers_compute"),
+        QStringLiteral("SELECT id, name, vessel_name, hostname, type, customer_number, version FROM servers_compute"),
         QStringLiteral("virtlyst"));
     if (!query.exec()) {
         qCWarning(VIRTLYST) << "Failed to get connections list";
