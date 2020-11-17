@@ -536,6 +536,10 @@ qDebug() << params;
             uint vcpu = params.value(QStringLiteral("vcpu")).toUInt();
             uint cur_vcpu = params.value(QStringLiteral("cur_vcpu")).toUInt();
 
+            if (vcpu < cur_vcpu) {
+                cur_vcpu = vcpu;
+            }
+
             if (commit) {
                 dom->setDescription(description);
                 dom->setMemory(memory * 1024);

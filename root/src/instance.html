@@ -471,7 +471,31 @@
             </div>
             {% if domain.status == 5 %}
                 <button type="submit" class="btn btn-lg btn-primary pull-left"
-                        name="change_settings">{% i18n "Change" %}</button>
+                        name="change_settings" onclick="return getData()">{% i18n "Change" %}</button>
+                <script>
+                    function getData() {
+                        var select_memory = document.getElementById("memory").value;
+                        var select_cur_memory = document.getElementById("cur_memory").value;
+
+                        var select_vcpu = document.getElementById("vcpu").value;
+                        var select_cur_vcpu = document.getElementById("cur_vcpu").value;
+
+                        var check_memory = parseInt(select_memory);
+                        var check_cur_memory = parseInt(select_cur_memory);
+                        var check_vcpu = parseInt(select_vcpu);
+                        var check_cur_vcpu = parseInt(select_cur_vcpu);
+
+                        if (check_vcpu < check_cur_vcpu && check_memory < check_cur_memory) {
+                            return confirm('{% i18n "Both CPU and Memory current allocations are greater than maximum allocations. Current allocations will get the same values as maximum allocations. Are you sure?" %}');
+                        }
+                        else if (check_memory < check_cur_memory) {
+                            return confirm('{% i18n "Memory current allocation is greater than maximum allocation. Current allocation will get the same value as maximum allocation. Are you sure?" %}');
+                        }
+                        else if (check_vcpu < check_cur_vcpu) {
+                            return confirm('{% i18n "CPU current allocation is greater than maximum allocation. Current allocation will get the same value as maximum allocation. Are you sure?" %}');
+                        }
+                    }
+                </script>
             {% else %}
                 <button class="btn btn-lg btn-primary pull-left disabled">{% i18n "Change" %}</button>
             {% endif %}
